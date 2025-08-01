@@ -195,7 +195,7 @@ export default function TripCard({ trip }: TripCardProps) {
           <div className="flex items-center space-x-8 w-full">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-800">
-                {formatTime(firstLeg.origin.actualDateTime)}
+                {formatTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime)}
               </div>
               <div className="text-sm text-gray-600">{firstLeg.origin.name}</div>
               <div className="text-xs text-gray-500">
@@ -214,7 +214,7 @@ export default function TripCard({ trip }: TripCardProps) {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-800">
-                {formatTime(lastLeg.destination.actualDateTime)}
+                {formatTime(lastLeg.destination.actualDateTime || lastLeg.destination.plannedDateTime)}
               </div>
               <div className="text-sm text-gray-600">{lastLeg.destination.name}</div>
               <div className="text-xs text-gray-500">

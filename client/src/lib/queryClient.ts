@@ -31,11 +31,16 @@ export const getQueryFn: <T>(options: {
     // Handle different API endpoints using frontend services
     if (queryKey[0] === "/api/trips" && queryKey.length > 1) {
       const [, fromStation, toStation, dateTime] = queryKey;
-      return await searchTrips({
-        fromStation: fromStation as string,
-        toStation: toStation as string,
-        dateTime: dateTime as string,
-      });
+      try {
+        return await searchTrips({
+          fromStation: fromStation as string,
+          toStation: toStation as string,
+          dateTime: dateTime as string,
+        });
+      } catch (error) {
+        console.error("Failed to fetch trips:", error);
+        throw error;
+      }
     }
     
     if (queryKey[0] === "/api/stations") {

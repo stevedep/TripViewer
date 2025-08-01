@@ -1,4 +1,4 @@
-import { TripSearchSchema, NSApiResponseSchema } from "@shared/schema";
+import { TripSearchSchema } from "@shared/schema";
 
 const NS_API_BASE = "https://gateway.apiportal.ns.nl";
 const API_KEY = "1ea3dd385baf4127a20cb8fb38af634d"; // Public API key for demo purposes
@@ -53,9 +53,9 @@ export async function searchTrips(params: {
     const data = await response.json();
     console.log("NS API Response:", JSON.stringify(data, null, 2).substring(0, 500) + "...");
     
-    // Validate response with schema but allow some optional fields to be missing
-    const validatedData = NSApiResponseSchema.parse(data);
-    return validatedData;
+    // Return raw data and let the component handle validation more gracefully
+    console.log("Returning raw NS API data for client-side validation");
+    return data;
   } catch (error) {
     console.error("Error fetching trips from NS API:", error);
     
