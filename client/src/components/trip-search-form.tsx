@@ -70,8 +70,7 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
     }
   };
 
-  // Set minimum date to today
-  const today = new Date().toISOString().slice(0, 16);
+  // Removed minimum date restriction to allow any datetime value
 
   return (
     <Card className="bg-white rounded-xl shadow-lg mb-8">
@@ -157,7 +156,6 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
                     <FormControl>
                       <Input
                         type="datetime-local"
-                        min={today}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ns-blue focus:border-ns-blue transition-colors"
                         {...field}
                       />
