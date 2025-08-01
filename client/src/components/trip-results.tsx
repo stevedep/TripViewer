@@ -13,7 +13,7 @@ export default function TripResults() {
   const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // Listen for search events
+  // Listen for search events - must be before useQuery for hooks order
   useEffect(() => {
     const handleSearch = (event: CustomEvent<TripSearch>) => {
       console.log("TripResults received search event:", event.detail);
@@ -32,7 +32,7 @@ export default function TripResults() {
     };
   }, []);
 
-  // Query trips data
+  // Query trips data - must be called before any conditional returns
   const { data, error, isError, isLoading: queryLoading } = useQuery<NSApiResponse>({
     queryKey: ["/api/trips", searchParams?.fromStation, searchParams?.toStation, searchParams?.dateTime],
     enabled: !!searchParams,
@@ -54,6 +54,13 @@ export default function TripResults() {
       onSettled: () => setIsLoading(false),
     },
   });
+
+  // Initialize all trips with data when available
+  useEffect(() => {
+    if (data && data.trips) {
+      setAllTrips(data.trips);
+    }
+  }, [data]);
 
   // Debug: Log the current state
   console.log("TripResults Debug:", {
@@ -136,13 +143,6 @@ export default function TripResults() {
       </Card>
     );
   }
-
-  // Initialize all trips with data when available
-  useEffect(() => {
-    if (data && data.trips) {
-      setAllTrips(data.trips);
-    }
-  }, [data]);
 
   // Function to remove duplicate trips based on uid
   const removeDuplicates = (trips: NSApiResponse["trips"]) => {
