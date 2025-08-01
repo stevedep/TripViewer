@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, Clock, AlertTriangle, Train, ArrowRight, Ticket } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import LegDetails from "./leg-details";
 import { type Trip } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 
 interface TripCardProps {
   trip: Trip;
@@ -67,10 +68,64 @@ export default function TripCard({ trip }: TripCardProps) {
     return "bg-ns-blue";
   };
 
+  // State to store train types for each leg
+  const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
+
   // Get leg category codes for display
   const getLegCategoryCodes = () => {
-    return trip.legs.map(leg => leg.product.categoryCode).filter(code => code && code.trim()).join(" → ");
+    return trip.legs.map(leg => {
+      const legKey = `${leg.product.number}-${leg.direction}`;
+      const trainType = legTrainTypes[legKey];
+      return trainType || leg.product.categoryCode;
+    }).filter(code => code && code.trim()).join(" → ");
   };
+
+  // Fetch train details for each leg to get the actual train type
+  useEffect(() => {
+    const fetchTrainDetails = async () => {
+      const promises = trip.legs.map(async (leg) => {
+        try {
+          // Extract train number and direction from the leg
+          const trainNumber = leg.product.number;
+          const direction = leg.direction;
+          const dateTime = leg.origin.plannedDateTime;
+          
+          if (!trainNumber || !direction) return null;
+
+          const response = await fetch(`/api/train/${trainNumber}/${encodeURIComponent(direction)}?dateTime=${encodeURIComponent(dateTime)}`);
+          
+          if (!response.ok) {
+            console.warn(`Failed to fetch train details for ${trainNumber}:`, response.statusText);
+            return null;
+          }
+
+          const data = await response.json();
+          return {
+            legKey: `${trainNumber}-${direction}`,
+            trainType: data.type || leg.product.categoryCode
+          };
+        } catch (error) {
+          console.warn(`Error fetching train details for leg:`, error);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(promises);
+      const newTrainTypes: { [key: string]: string } = {};
+      
+      results.forEach(result => {
+        if (result) {
+          newTrainTypes[result.legKey] = result.trainType;
+        }
+      });
+
+      setLegTrainTypes(newTrainTypes);
+    };
+
+    if (trip.legs.length > 0) {
+      fetchTrainDetails();
+    }
+  }, [trip.legs]);
 
   return (
     <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
