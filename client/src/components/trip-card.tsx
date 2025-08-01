@@ -132,17 +132,14 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return Math.max(0, Math.round(waitingMs / (1000 * 60))); // Convert to minutes, minimum 0
   };
 
-  // Generate detailed header structure: x transfers - [station] - (waiting : arrival platform -> departure platform) - material - [station] etc
+  // Generate detailed header structure with multiple lines
   const getDetailedHeader = () => {
-    const parts: string[] = [];
+    // Line 1: Transfer count
+    const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`;
     
-    // Add transfer count
-    parts.push(`${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`);
-    
-    // Process each leg
+    // Line 2: Journey details
+    const journeyParts: string[] = [];
     trip.legs.forEach((leg, index) => {
-      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-      const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
       const waitingTime = getWaitingTime(index);
       
       // Get platform information
@@ -157,16 +154,28 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       }
       
       // Add full station name where you get on the train
-      parts.push(`[${leg.origin.name}]`);
+      journeyParts.push(`[${leg.origin.name}]`);
       
       // Add waiting time and platform info
-      parts.push(`(${waitingTime} min : ${platformInfo})`);
-      
-      // Add material/train type
-      parts.push(trainType);
+      journeyParts.push(`(${waitingTime} min : ${platformInfo})`);
     });
     
-    return parts.join(' - ');
+    // Line 3: Material/train info with seating
+    const materialParts: string[] = [];
+    trip.legs.forEach((leg, index) => {
+      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+      const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+      
+      // Get seating information (placeholder for now - would need API data for actual counts)
+      const firstClassSeats = "?"; // Would come from train composition API
+      materialParts.push(`${trainType} : ${firstClassSeats} first class seats`);
+    });
+    
+    return {
+      transferCount,
+      journeyDetails: journeyParts.join(' - '),
+      materialInfo: materialParts.join(' - ')
+    };
   };
 
   // Fetch train details for each leg to get the actual train type
@@ -278,8 +287,17 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               {statusInfo.icon}
               <span>{statusInfo.text}</span>
             </div>
-            <div className="text-gray-600 text-sm max-w-2xl">
-              {getDetailedHeader()}
+            <div className="text-gray-600 text-sm max-w-2xl space-y-1">
+              {(() => {
+                const headerInfo = getDetailedHeader();
+                return (
+                  <>
+                    <div className="font-medium">{headerInfo.transferCount}</div>
+                    <div>{headerInfo.journeyDetails}</div>
+                    <div className="text-ns-blue font-medium">{headerInfo.materialInfo}</div>
+                  </>
+                );
+              })()}
             </div>
           </div>
           <div className="text-right">
