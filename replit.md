@@ -2,12 +2,15 @@
 
 This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
 
-**Current Status**: Converted from full-stack to static website deployment (August 1, 2025)
+**Current Status**: Fully functional material type filtering system with static website deployment (August 1, 2025)
 
 Key features:
 - Real-time trip search with flexible datetime selection
 - Advanced trip result display with dynamic loading
 - Comprehensive NS transportation data integration
+- **Material type filtering** - filter trips by exact train types (IC, ICD, ICNG, VIRM, DDZ, Flirt, SNG, SPR)
+- **Transfer filtering** - filter by number of transfers (0, 2, 3+)
+- **Combined filtering** - use both transfer and material type filters simultaneously
 - Responsive and user-friendly trip information interface
 - **Static deployment ready** - no server-side components required
 
@@ -32,6 +35,10 @@ The application now operates as a static website with all API calls made directl
 - Created `client/src/lib/nsApi.ts` for direct NS API integration
 - Updated query client to use frontend services instead of backend routes
 - Built static deployment configuration with proper file structure
+- **Material Type Filtering System**: Comprehensive filtering by train types using Virtual Train API
+- **Enhanced Trip Display**: Shows exact train types (ICD, ICNG, VIRM, DDZ, Flirt, SNG) in trip headers
+- **Combined Filter Logic**: Parent component handles both transfer and material type filtering
+- **ICD Train Support**: Special handling for ICD trains (NS API category "IC" → Virtual Train API type "ICD")
 
 ## Data Storage Solutions
 The application currently uses in-memory storage for user data through a custom storage interface that could be easily swapped for a database implementation. Drizzle ORM is configured for PostgreSQL integration, indicating plans for persistent data storage.
