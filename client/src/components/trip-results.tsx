@@ -15,6 +15,7 @@ export default function TripResults() {
   const [materialTypeFilter, setMaterialTypeFilter] = useState<string | null>(null);
   const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [enhancedTrainTypes, setEnhancedTrainTypes] = useState<Set<string>>(new Set());
 
   // Listen for search events - must be before useQuery for hooks order
   useEffect(() => {
@@ -57,6 +58,21 @@ export default function TripResults() {
       setAllTrips(data.trips);
     }
   }, [data]);
+
+  // Listen for enhanced train types from trip cards
+  useEffect(() => {
+    const handleTrainTypeUpdate = (event: CustomEvent) => {
+      const { trainType } = event.detail;
+      if (trainType) {
+        setEnhancedTrainTypes(prev => new Set(Array.from(prev).concat([trainType])));
+      }
+    };
+
+    window.addEventListener('trainTypeUpdated', handleTrainTypeUpdate as EventListener);
+    return () => {
+      window.removeEventListener('trainTypeUpdated', handleTrainTypeUpdate as EventListener);
+    };
+  }, []);
 
   // Debug: Log the current state
   console.log("TripResults Debug:", {
@@ -195,26 +211,24 @@ export default function TripResults() {
     // Use allTrips for everything (includes original + additional trips without duplicates)
     const currentTrips = allTrips.length > 0 ? allTrips : data.trips;
     
-    // Get all unique material types from all trips (matching what's shown in headers)
-    // This needs to match the logic in getLegCategoryCodes from trip-card.tsx
+
+
+    // Get all unique material types from all trips (includes enhanced types from API calls)
     const getAllMaterialTypes = (trips: NSApiResponse["trips"]) => {
       const materialTypes = new Set<string>();
+      
+      // Add basic category codes that are always available
       trips.forEach(trip => {
         trip.legs.forEach(leg => {
-          // Add the category code from the product (this is what's always available)
           if (leg.product?.categoryCode) {
             materialTypes.add(leg.product.categoryCode);
           }
-          // Debug: Log the leg data to see what we have
-          console.log("Leg data for material type extraction:", {
-            productCategoryCode: leg.product?.categoryCode,
-            productDisplayName: leg.product?.displayName,
-            productNumber: leg.product?.number,
-            productLongCategoryName: leg.product?.longCategoryName
-          });
         });
       });
-      console.log("All material types found:", Array.from(materialTypes));
+
+      // Add enhanced train types from Virtual Train API
+      Array.from(enhancedTrainTypes).forEach(type => materialTypes.add(type));
+
       return Array.from(materialTypes).sort();
     };
 
@@ -226,12 +240,8 @@ export default function TripResults() {
       filteredTrips = filteredTrips.filter(trip => trip.transfers === transferFilter);
     }
     
-    // Apply material type filter (matching what's shown in trip headers)
-    if (materialTypeFilter) {
-      filteredTrips = filteredTrips.filter(trip => 
-        trip.legs.some(leg => leg.product?.categoryCode === materialTypeFilter)
-      );
-    }
+    // Material type filtering will be handled by individual TripCard components
+    // since they have access to the enhanced train types from Virtual Train API
 
     // Get unique transfer counts and material types for filter options
     const transferCounts = Array.from(new Set(currentTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
@@ -379,7 +389,11 @@ export default function TripResults() {
 
         {filteredTrips.length > 0 ? (
           filteredTrips.map((trip, index) => (
-            <TripCard key={`${trip.uid}-${index}`} trip={trip} />
+            <TripCard 
+              key={`${trip.uid}-${index}`} 
+              trip={trip} 
+              materialTypeFilter={materialTypeFilter}
+            />
           ))
         ) : (
           <Card className="bg-gray-50 border border-gray-200 rounded-lg">

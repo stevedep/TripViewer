@@ -8,9 +8,10 @@ import { useQuery } from "@tanstack/react-query";
 
 interface TripCardProps {
   trip: Trip;
+  materialTypeFilter?: string | null;
 }
 
-export default function TripCard({ trip }: TripCardProps) {
+export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   const [showDetails, setShowDetails] = useState(false);
 
   // Calculate delay information
@@ -77,6 +78,19 @@ export default function TripCard({ trip }: TripCardProps) {
     timestamp: string;
   }>>([]);
   const [showApiDetails, setShowApiDetails] = useState(false);
+  
+  // Check if this trip should be visible based on material type filter
+  const shouldShowTrip = () => {
+    if (!materialTypeFilter) return true;
+    
+    // Check basic category codes
+    const hasBasicMatch = trip.legs.some(leg => leg.product?.categoryCode === materialTypeFilter);
+    if (hasBasicMatch) return true;
+    
+    // Check enhanced train types (from Virtual Train API)
+    const hasEnhancedMatch = Object.values(legTrainTypes).includes(materialTypeFilter);
+    return hasEnhancedMatch;
+  };
 
   // Get leg category codes for display
   const getLegCategoryCodes = () => {
@@ -151,6 +165,11 @@ export default function TripCard({ trip }: TripCardProps) {
       results.forEach(result => {
         if (result) {
           newTrainTypes[result.legKey] = result.trainType;
+          
+          // Emit custom event for the filter to listen to
+          window.dispatchEvent(new CustomEvent('trainTypeUpdated', {
+            detail: { trainType: result.trainType }
+          }));
         }
       });
 
@@ -162,6 +181,11 @@ export default function TripCard({ trip }: TripCardProps) {
       fetchTrainDetails();
     }
   }, [trip.legs]);
+
+  // Don't render if filtered out
+  if (!shouldShowTrip()) {
+    return null;
+  }
 
   return (
     <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
