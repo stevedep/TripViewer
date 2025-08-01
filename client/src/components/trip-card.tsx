@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, Clock, AlertTriangle, Train, ArrowRight, Ticket } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Train, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import LegDetails from "./leg-details";
@@ -292,19 +292,7 @@ export default function TripCard({ trip }: TripCardProps) {
         </CardContent>
       )}
 
-      {/* Trip Actions */}
-      <CardContent className="px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600 flex items-center">
-            <AlertTriangle className="w-4 h-4 mr-1" />
-            Real-time information
-          </div>
-          <Button className="bg-ns-orange hover:bg-orange-600 text-white font-medium">
-            <Ticket className="w-4 h-4 mr-2" />
-            Buy Ticket
-          </Button>
-        </div>
-      </CardContent>
+
     </Card>
   );
 }
