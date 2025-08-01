@@ -27,6 +27,31 @@ export default function LegDetails({ legs }: LegDetailsProps) {
     });
   };
 
+  // Calculate delay in minutes
+  const calculateDelay = (plannedDateTime: string, actualDateTime: string | undefined): number => {
+    if (!actualDateTime) return 0;
+    const planned = new Date(plannedDateTime);
+    const actual = new Date(actualDateTime);
+    const delayMs = actual.getTime() - planned.getTime();
+    return Math.round(delayMs / (1000 * 60)); // Convert to minutes
+  };
+
+  // Format delay display
+  const formatDelay = (delayMinutes: number): { text: string; className: string } => {
+    if (delayMinutes === 0) return { text: '', className: '' };
+    if (delayMinutes > 0) {
+      return { 
+        text: `+${delayMinutes} min`, 
+        className: 'text-red-600 font-medium' 
+      };
+    } else {
+      return { 
+        text: `${delayMinutes} min`, 
+        className: 'text-green-600 font-medium' 
+      };
+    }
+  };
+
   // Get train type color
   const getTrainTypeColor = (categoryCode: string) => {
     switch (categoryCode) {
@@ -71,7 +96,7 @@ export default function LegDetails({ legs }: LegDetailsProps) {
               <div className="text-gray-500 text-sm">→ {leg.direction}</div>
             </div>
             <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-              {leg.duration.value}
+              {leg.duration?.value || "Unknown duration"}
             </div>
           </div>
 
@@ -83,8 +108,17 @@ export default function LegDetails({ legs }: LegDetailsProps) {
               <div>
                 <div className="font-semibold text-gray-800">{leg.origin.name}</div>
                 <div className="text-sm text-gray-600">
-                  Departure: {formatTime(leg.origin.actualDateTime)}
+                  Departure: {formatTime(leg.origin.actualDateTime || leg.origin.plannedDateTime)}
                 </div>
+                {(() => {
+                  const delay = calculateDelay(leg.origin.plannedDateTime, leg.origin.actualDateTime);
+                  const delayInfo = formatDelay(delay);
+                  return delayInfo.text ? (
+                    <div className={`text-xs ${delayInfo.className}`}>
+                      {delayInfo.text}
+                    </div>
+                  ) : null;
+                })()}
                 <div className="text-xs text-gray-500">
                   Platform {leg.origin.actualTrack || leg.origin.plannedTrack || "?"}
                 </div>
@@ -102,8 +136,17 @@ export default function LegDetails({ legs }: LegDetailsProps) {
               <div>
                 <div className="font-semibold text-gray-800">{leg.destination.name}</div>
                 <div className="text-sm text-gray-600">
-                  Arrival: {formatTime(leg.destination.actualDateTime)}
+                  Arrival: {formatTime(leg.destination.actualDateTime || leg.destination.plannedDateTime)}
                 </div>
+                {(() => {
+                  const delay = calculateDelay(leg.destination.plannedDateTime, leg.destination.actualDateTime);
+                  const delayInfo = formatDelay(delay);
+                  return delayInfo.text ? (
+                    <div className={`text-xs ${delayInfo.className}`}>
+                      {delayInfo.text}
+                    </div>
+                  ) : null;
+                })()}
                 <div className="text-xs text-gray-500">
                   Platform {leg.destination.actualTrack || leg.destination.plannedTrack || "?"}
                 </div>

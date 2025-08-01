@@ -63,6 +63,31 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     });
   };
 
+  // Calculate delay in minutes
+  const calculateDelay = (plannedDateTime: string, actualDateTime: string | undefined): number => {
+    if (!actualDateTime) return 0;
+    const planned = new Date(plannedDateTime);
+    const actual = new Date(actualDateTime);
+    const delayMs = actual.getTime() - planned.getTime();
+    return Math.round(delayMs / (1000 * 60)); // Convert to minutes
+  };
+
+  // Format delay display
+  const formatDelay = (delayMinutes: number): { text: string; className: string } => {
+    if (delayMinutes === 0) return { text: '', className: '' };
+    if (delayMinutes > 0) {
+      return { 
+        text: `+${delayMinutes} min`, 
+        className: 'text-red-600 font-medium' 
+      };
+    } else {
+      return { 
+        text: `${delayMinutes} min`, 
+        className: 'text-green-600 font-medium' 
+      };
+    }
+  };
+
   // Get line color based on train type
   const getLineColor = () => {
     if (trip.transfers > 0) return "bg-yellow-500";
@@ -224,6 +249,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               <div className="text-2xl font-bold text-gray-800">
                 {formatTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime)}
               </div>
+              {(() => {
+                const delay = calculateDelay(firstLeg.origin.plannedDateTime, firstLeg.origin.actualDateTime);
+                const delayInfo = formatDelay(delay);
+                return delayInfo.text ? (
+                  <div className={`text-xs ${delayInfo.className}`}>
+                    {delayInfo.text}
+                  </div>
+                ) : null;
+              })()}
               <div className="text-sm text-gray-600">{firstLeg.origin.name}</div>
               <div className="text-xs text-gray-500">
                 Platform {firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
@@ -243,6 +277,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               <div className="text-2xl font-bold text-gray-800">
                 {formatTime(lastLeg.destination.actualDateTime || lastLeg.destination.plannedDateTime)}
               </div>
+              {(() => {
+                const delay = calculateDelay(lastLeg.destination.plannedDateTime, lastLeg.destination.actualDateTime);
+                const delayInfo = formatDelay(delay);
+                return delayInfo.text ? (
+                  <div className={`text-xs ${delayInfo.className}`}>
+                    {delayInfo.text}
+                  </div>
+                ) : null;
+              })()}
               <div className="text-sm text-gray-600">{lastLeg.destination.name}</div>
               <div className="text-xs text-gray-500">
                 Platform {lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
