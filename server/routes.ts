@@ -75,17 +75,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get train details from NS Virtual Train API
-  app.get("/api/train/:trainNumber/:direction", async (req, res) => {
+  app.get("/api/train/:trainNumber/:stationCode", async (req, res) => {
     try {
-      const { trainNumber, direction } = req.params;
+      const { trainNumber, stationCode } = req.params;
       const { dateTime } = req.query;
       
-      if (!trainNumber || !direction || !dateTime) {
-        return res.status(400).json({ error: "Missing required parameters: trainNumber, direction, dateTime" });
+      if (!trainNumber || !stationCode || !dateTime) {
+        return res.status(400).json({ error: "Missing required parameters: trainNumber, stationCode, dateTime" });
       }
 
       const formattedDateTime = encodeURIComponent(dateTime as string);
-      const apiUrl = `https://gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein/${trainNumber}/${direction}?dateTime=${formattedDateTime}&features=zitplaats,druktev2,platformitems`;
+      const apiUrl = `https://gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein/${trainNumber}/${stationCode}?dateTime=${formattedDateTime}&features=zitplaats,druktev2,platformitems`;
       
       // Get API key from environment variables
       const apiKey = process.env.NS_API_KEY || process.env.OCP_APIM_SUBSCRIPTION_KEY || "1ea3dd385baf4127a20cb8fb38af634d";

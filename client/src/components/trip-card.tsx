@@ -81,7 +81,7 @@ export default function TripCard({ trip }: TripCardProps) {
   // Get leg category codes for display
   const getLegCategoryCodes = () => {
     return trip.legs.map(leg => {
-      const legKey = `${leg.product.number}-${leg.direction}`;
+      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
       const trainType = legTrainTypes[legKey];
       return trainType || leg.product.categoryCode;
     }).filter(code => code && code.trim()).join(" → ");
@@ -99,14 +99,14 @@ export default function TripCard({ trip }: TripCardProps) {
 
       const promises = trip.legs.map(async (leg) => {
         try {
-          // Extract train number and direction from the leg
+          // Extract train number, destination station code, and datetime from the leg
           const trainNumber = leg.product.number;
-          const direction = leg.direction;
+          const destinationStationCode = leg.destination.stationCode;
           const dateTime = leg.origin.plannedDateTime;
           
-          if (!trainNumber || !direction) return null;
+          if (!trainNumber || !destinationStationCode) return null;
 
-          const url = `/api/train/${trainNumber}/${encodeURIComponent(direction)}?dateTime=${encodeURIComponent(dateTime)}`;
+          const url = `/api/train/${trainNumber}/${encodeURIComponent(destinationStationCode)}?dateTime=${encodeURIComponent(dateTime)}`;
           const timestamp = new Date().toISOString();
           
           const response = await fetch(url);
@@ -126,7 +126,7 @@ export default function TripCard({ trip }: TripCardProps) {
           }
 
           return {
-            legKey: `${trainNumber}-${direction}`,
+            legKey: `${trainNumber}-${destinationStationCode}`,
             trainType: data.type || leg.product.categoryCode
           };
         } catch (error) {
