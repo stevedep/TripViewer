@@ -16,6 +16,7 @@ export default function TripResults() {
   const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [enhancedTrainTypes, setEnhancedTrainTypes] = useState<Set<string>>(new Set());
+  const [tripEnhancedTypes, setTripEnhancedTypes] = useState<{[tripId: string]: string[]}>({});
 
   // Listen for search events - must be before useQuery for hooks order
   useEffect(() => {
@@ -68,9 +69,21 @@ export default function TripResults() {
       }
     };
 
+    const handleTripEnhancedData = (event: CustomEvent) => {
+      const { tripId, enhancedTypes } = event.detail;
+      if (tripId && enhancedTypes) {
+        setTripEnhancedTypes(prev => ({
+          ...prev,
+          [tripId]: enhancedTypes
+        }));
+      }
+    };
+
     window.addEventListener('trainTypeUpdated', handleTrainTypeUpdate as EventListener);
+    window.addEventListener('tripEnhancedDataUpdated', handleTripEnhancedData as EventListener);
     return () => {
       window.removeEventListener('trainTypeUpdated', handleTrainTypeUpdate as EventListener);
+      window.removeEventListener('tripEnhancedDataUpdated', handleTripEnhancedData as EventListener);
     };
   }, []);
 
@@ -232,6 +245,20 @@ export default function TripResults() {
       return Array.from(materialTypes).sort();
     };
 
+    // Filter function for material types
+    const tripMatchesMaterialFilter = (trip: any): boolean => {
+      if (!materialTypeFilter) return true;
+      
+      // For basic category codes (IC, SPR, ICD), check leg category codes
+      if (['IC', 'SPR', 'ICD'].includes(materialTypeFilter)) {
+        return trip.legs.some((leg: any) => leg.product?.categoryCode === materialTypeFilter);
+      }
+      
+      // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
+      const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+      return enhancedTypes.includes(materialTypeFilter);
+    };
+
     // Filter trips based on both transfer and material type filters
     let filteredTrips = currentTrips;
     
@@ -240,8 +267,8 @@ export default function TripResults() {
       filteredTrips = filteredTrips.filter(trip => trip.transfers === transferFilter);
     }
     
-    // Material type filtering will be handled by individual TripCard components
-    // since they have access to the enhanced train types from Virtual Train API
+    // Apply material type filter
+    filteredTrips = filteredTrips.filter(tripMatchesMaterialFilter);
 
     // Get unique transfer counts and material types for filter options
     const transferCounts = Array.from(new Set(currentTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
@@ -339,9 +366,11 @@ export default function TripResults() {
                           trip.legs.some(leg => leg.product?.categoryCode === materialType)
                         ).length;
                       }
-                      // For enhanced types, we can't count accurately until all trip cards load their data
-                      // So show a placeholder count that will be updated dynamically
-                      return '...';
+                      // For enhanced types, count using enhanced data
+                      return currentTrips.filter(trip => {
+                        const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+                        return enhancedTypes.includes(materialType);
+                      }).length;
                     })()})
                   </button>
                 ))}

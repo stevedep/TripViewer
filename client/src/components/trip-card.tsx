@@ -80,23 +80,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   const [showApiDetails, setShowApiDetails] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
   
-  // Check if this trip should be visible based on material type filter
-  const shouldShowTrip = () => {
-    if (!materialTypeFilter) return true;
-    
-    // For basic category codes (IC, SPR, ICD), filter by leg category code
-    if (['IC', 'SPR', 'ICD'].includes(materialTypeFilter)) {
-      return trip.legs.some(leg => leg.product?.categoryCode === materialTypeFilter);
-    }
-    
-    // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
-    // If we don't have enhanced data yet, show the trip (it will hide later if needed)
-    if (Object.keys(legTrainTypes).length === 0) return true;
-    
-    // Check if any leg matches the enhanced train type
-    const hasEnhancedMatch = Object.values(legTrainTypes).includes(materialTypeFilter);
-    return hasEnhancedMatch;
-  };
+  // No longer need to filter at card level - parent component handles filtering
 
   // Get leg category codes for display
   const getLegCategoryCodes = () => {
@@ -182,8 +166,11 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       setLegTrainTypes(newTrainTypes);
       setApiCallDetails(apiCalls);
       
-      // Force a re-render to apply filtering after enhanced data is loaded
-      setForceUpdate(prev => prev + 1);
+      // Emit enhanced types to parent component for filtering
+      const enhancedTypes = Object.values(newTrainTypes);
+      window.dispatchEvent(new CustomEvent('tripEnhancedDataUpdated', {
+        detail: { tripId: trip.uid, enhancedTypes }
+      }));
     };
 
     if (trip.legs.length > 0) {
@@ -191,10 +178,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     }
   }, [trip.legs]);
 
-  // Don't render if filtered out (dependency on forceUpdate ensures re-evaluation after API data loads)
-  if (!shouldShowTrip()) {
-    return null;
-  }
+  // No longer filtering at card level - parent component handles filtering
 
   return (
     <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
