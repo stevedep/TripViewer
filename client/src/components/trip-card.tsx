@@ -78,16 +78,22 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     timestamp: string;
   }>>([]);
   const [showApiDetails, setShowApiDetails] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
   
   // Check if this trip should be visible based on material type filter
   const shouldShowTrip = () => {
     if (!materialTypeFilter) return true;
     
-    // Check basic category codes
-    const hasBasicMatch = trip.legs.some(leg => leg.product?.categoryCode === materialTypeFilter);
-    if (hasBasicMatch) return true;
+    // For basic category codes (IC, SPR, ICD), filter by leg category code
+    if (['IC', 'SPR', 'ICD'].includes(materialTypeFilter)) {
+      return trip.legs.some(leg => leg.product?.categoryCode === materialTypeFilter);
+    }
     
-    // Check enhanced train types (from Virtual Train API)
+    // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
+    // If we don't have enhanced data yet, show the trip (it will hide later if needed)
+    if (Object.keys(legTrainTypes).length === 0) return true;
+    
+    // Check if any leg matches the enhanced train type
     const hasEnhancedMatch = Object.values(legTrainTypes).includes(materialTypeFilter);
     return hasEnhancedMatch;
   };
@@ -175,6 +181,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
       setLegTrainTypes(newTrainTypes);
       setApiCallDetails(apiCalls);
+      
+      // Force a re-render to apply filtering after enhanced data is loaded
+      setForceUpdate(prev => prev + 1);
     };
 
     if (trip.legs.length > 0) {
@@ -182,7 +191,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     }
   }, [trip.legs]);
 
-  // Don't render if filtered out
+  // Don't render if filtered out (dependency on forceUpdate ensures re-evaluation after API data loads)
   if (!shouldShowTrip()) {
     return null;
   }

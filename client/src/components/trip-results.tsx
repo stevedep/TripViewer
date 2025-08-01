@@ -332,9 +332,17 @@ export default function TripResults() {
                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
                     }`}
                   >
-                    {materialType} ({currentTrips.filter(trip => 
-                      trip.legs.some(leg => leg.product?.categoryCode === materialType)
-                    ).length})
+                    {materialType} ({(() => {
+                      // For basic category codes, count by leg category code
+                      if (['IC', 'SPR', 'ICD'].includes(materialType)) {
+                        return currentTrips.filter(trip => 
+                          trip.legs.some(leg => leg.product?.categoryCode === materialType)
+                        ).length;
+                      }
+                      // For enhanced types, we can't count accurately until all trip cards load their data
+                      // So show a placeholder count that will be updated dynamically
+                      return '...';
+                    })()})
                   </button>
                 ))}
               </div>
