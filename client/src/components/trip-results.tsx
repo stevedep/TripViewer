@@ -249,9 +249,23 @@ export default function TripResults() {
     const tripMatchesMaterialFilter = (trip: any): boolean => {
       if (!materialTypeFilter) return true;
       
+      // Debug logging for ICD filter
+      if (materialTypeFilter === 'ICD') {
+        console.log('ICD Filter Debug for trip:', trip.uid);
+        trip.legs.forEach((leg: any, index: number) => {
+          console.log(`  Leg ${index}: categoryCode="${leg.product?.categoryCode}", displayName="${leg.product?.displayName}"`);
+        });
+        const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+        console.log(`  Enhanced types: [${enhancedTypes.join(', ')}]`);
+      }
+      
       // For basic category codes (IC, SPR, ICD), check leg category codes
       if (['IC', 'SPR', 'ICD'].includes(materialTypeFilter)) {
-        return trip.legs.some((leg: any) => leg.product?.categoryCode === materialTypeFilter);
+        const matches = trip.legs.some((leg: any) => leg.product?.categoryCode === materialTypeFilter);
+        if (materialTypeFilter === 'ICD') {
+          console.log(`  Basic match result: ${matches}`);
+        }
+        return matches;
       }
       
       // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
