@@ -9,6 +9,7 @@ export default function TripResults() {
   const [searchParams, setSearchParams] = useState<TripSearch | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [transferFilter, setTransferFilter] = useState<number | null>(null);
 
   // Listen for search events
   useEffect(() => {
@@ -133,6 +134,14 @@ export default function TripResults() {
 
   // Show results if we have data, regardless of error state
   if (data && data.trips && data.trips.length > 0) {
+    // Filter trips based on transfer filter
+    const filteredTrips = transferFilter !== null 
+      ? data.trips.filter(trip => trip.transfers === transferFilter)
+      : data.trips;
+
+    // Get unique transfer counts for filter options
+    const transferCounts = [...new Set(data.trips.map(trip => trip.transfers))].sort((a, b) => a - b);
+
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-6">
@@ -141,7 +150,40 @@ export default function TripResults() {
             Available Trips
           </h2>
           <div className="text-sm text-gray-600">
-            {data?.trips?.length || 0} trips found
+            {transferFilter !== null 
+              ? `${filteredTrips.length} of ${data?.trips?.length || 0} trips (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})`
+              : `${data?.trips?.length || 0} trips found`
+            }
+          </div>
+        </div>
+
+        {/* Transfer Filter */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Filter by Transfers</h3>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setTransferFilter(null)}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                transferFilter === null
+                  ? 'bg-ns-blue text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              All ({data.trips.length})
+            </button>
+            {transferCounts.map(count => (
+              <button
+                key={count}
+                onClick={() => setTransferFilter(count)}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                  transferFilter === count
+                    ? 'bg-ns-blue text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                }`}
+              >
+                {count} transfer{count !== 1 ? 's' : ''} ({data.trips.filter(trip => trip.transfers === count).length})
+              </button>
+            ))}
           </div>
         </div>
 
@@ -170,9 +212,27 @@ export default function TripResults() {
           )}
         </div>
 
-        {data?.trips?.map((trip, index) => (
-          <TripCard key={trip.uid || index} trip={trip} />
-        ))}
+        {filteredTrips.length > 0 ? (
+          filteredTrips.map((trip, index) => (
+            <TripCard key={trip.uid || index} trip={trip} />
+          ))
+        ) : (
+          <Card className="bg-gray-50 border border-gray-200 rounded-lg">
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="text-gray-400 text-3xl mb-4 mx-auto w-12 h-12" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No trips match your filter</h3>
+              <p className="text-gray-500 mb-4">
+                Try selecting a different number of transfers or clear the filter to see all trips.
+              </p>
+              <button
+                onClick={() => setTransferFilter(null)}
+                className="px-4 py-2 bg-ns-blue text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Show All Trips
+              </button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
