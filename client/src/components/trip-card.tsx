@@ -96,7 +96,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
   // State to store train types and seating data for each leg and API call details
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
-  const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: number }>({});
+  const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: { first: number; second: number } }>({});
   const [apiCallDetails, setApiCallDetails] = useState<Array<{
     url: string;
     response: any;
@@ -168,8 +168,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
       
       // Get seating information from Virtual Train API data
-      const firstClassSeats = legSeatingData[legKey] || "?";
-      materialParts.push(`${trainType} : ${firstClassSeats} first class seats`);
+      const seatingData = legSeatingData[legKey];
+      if (seatingData) {
+        materialParts.push(`${trainType} : ${seatingData.first} first class - ${seatingData.second} second class seats`);
+      } else {
+        materialParts.push(`${trainType} : ? first class - ? second class seats`);
+      }
     });
     
     return {
@@ -198,8 +202,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           
           if (!trainNumber || !destinationStationCode) return null;
 
-          // For static deployment, make direct call to NS Virtual Train API with CORS
-          const virtualTrainUrl = `https://gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein/${trainNumber}/${encodeURIComponent(destinationStationCode)}?dateTime=${encodeURIComponent(dateTime)}`;
+          // For static deployment, make direct call to NS Virtual Train API with CORS and seating features
+          const virtualTrainUrl = `https://gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein/${trainNumber}/${encodeURIComponent(destinationStationCode)}?dateTime=${encodeURIComponent(dateTime)}&features=zitplaats,druktev2,platformitems`;
           const timestamp = new Date().toISOString();
 
           const response = await fetch(virtualTrainUrl, {
@@ -230,16 +234,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             return null;
           }
 
-          // Extract first class seat count from Virtual Train API response
+          // Extract seat counts from Virtual Train API response
           let firstClassSeats = 0;
-          if (data.materieelDelenDrukteInformatie) {
-            data.materieelDelenDrukteInformatie.forEach((deel: any) => {
-              if (deel.materieelDeelNummer && deel.klassen) {
-                deel.klassen.forEach((klasse: any) => {
-                  if (klasse.klasse === "FIRST" && klasse.zitplaatsen) {
-                    firstClassSeats += klasse.zitplaatsen.length;
-                  }
-                });
+          let secondClassSeats = 0;
+          
+          if (data.materieeldelen && data.materieeldelen.length > 0) {
+            data.materieeldelen.forEach((deel: any) => {
+              if (deel.zitplaatsen) {
+                firstClassSeats += deel.zitplaatsen.zitplaatsEersteKlas || 0;
+                secondClassSeats += deel.zitplaatsen.zitplaatsTweedeKlas || 0;
               }
             });
           }
@@ -247,7 +250,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           return {
             legKey: `${trainNumber}-${destinationStationCode}`,
             trainType: data.type || leg.product.categoryCode,
-            firstClassSeats: firstClassSeats
+            firstClassSeats: firstClassSeats,
+            secondClassSeats: secondClassSeats
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -267,12 +271,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
       const results = await Promise.all(promises);
       const newTrainTypes: { [key: string]: string } = {};
-      const newSeatingData: { [key: string]: number } = {};
+      const newSeatingData: { [key: string]: { first: number; second: number } } = {};
       
       results.forEach(result => {
         if (result) {
           newTrainTypes[result.legKey] = result.trainType;
-          newSeatingData[result.legKey] = result.firstClassSeats || 0;
+          newSeatingData[result.legKey] = {
+            first: result.firstClassSeats || 0,
+            second: result.secondClassSeats || 0
+          };
           
           // Emit custom event for the filter to listen to
           window.dispatchEvent(new CustomEvent('trainTypeUpdated', {
