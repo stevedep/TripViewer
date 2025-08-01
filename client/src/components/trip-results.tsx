@@ -249,23 +249,15 @@ export default function TripResults() {
     const tripMatchesMaterialFilter = (trip: any): boolean => {
       if (!materialTypeFilter) return true;
       
-      // Debug logging for ICD filter
+      // Special case for ICD: these trains have categoryCode "IC" but Virtual Train API returns "ICD"
       if (materialTypeFilter === 'ICD') {
-        console.log('ICD Filter Debug for trip:', trip.uid);
-        trip.legs.forEach((leg: any, index: number) => {
-          console.log(`  Leg ${index}: categoryCode="${leg.product?.categoryCode}", displayName="${leg.product?.displayName}"`);
-        });
         const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
-        console.log(`  Enhanced types: [${enhancedTypes.join(', ')}]`);
+        return enhancedTypes.includes('ICD');
       }
       
-      // For basic category codes (IC, SPR, ICD), check leg category codes
-      if (['IC', 'SPR', 'ICD'].includes(materialTypeFilter)) {
-        const matches = trip.legs.some((leg: any) => leg.product?.categoryCode === materialTypeFilter);
-        if (materialTypeFilter === 'ICD') {
-          console.log(`  Basic match result: ${matches}`);
-        }
-        return matches;
+      // For basic category codes (IC, SPR), check leg category codes
+      if (['IC', 'SPR'].includes(materialTypeFilter)) {
+        return trip.legs.some((leg: any) => leg.product?.categoryCode === materialTypeFilter);
       }
       
       // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
@@ -374,8 +366,15 @@ export default function TripResults() {
                     }`}
                   >
                     {materialType} ({(() => {
+                      // Special case for ICD: count using enhanced data
+                      if (materialType === 'ICD') {
+                        return currentTrips.filter(trip => {
+                          const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+                          return enhancedTypes.includes('ICD');
+                        }).length;
+                      }
                       // For basic category codes, count by leg category code
-                      if (['IC', 'SPR', 'ICD'].includes(materialType)) {
+                      if (['IC', 'SPR'].includes(materialType)) {
                         return currentTrips.filter(trip => 
                           trip.legs.some(leg => leg.product?.categoryCode === materialType)
                         ).length;
