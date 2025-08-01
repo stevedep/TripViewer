@@ -97,6 +97,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   // State to store train types and seating data for each leg and API call details
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
   const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: { first: number; second: number } }>({});
+  const [legCarriageData, setLegCarriageData] = useState<{ [key: string]: { carriageCount: number } }>({});
   const [apiCallDetails, setApiCallDetails] = useState<Array<{
     url: string;
     response: any;
@@ -234,11 +235,13 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             return null;
           }
 
-          // Extract seat counts from Virtual Train API response
+          // Extract seat counts and carriage count from Virtual Train API response
           let firstClassSeats = 0;
           let secondClassSeats = 0;
+          let carriageCount = 0;
           
           if (data.materieeldelen && data.materieeldelen.length > 0) {
+            carriageCount = data.materieeldelen.length; // Number of carriages is the number of materieeldelen
             data.materieeldelen.forEach((deel: any) => {
               if (deel.zitplaatsen) {
                 firstClassSeats += deel.zitplaatsen.zitplaatsEersteKlas || 0;
@@ -251,7 +254,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             legKey: `${trainNumber}-${destinationStationCode}`,
             trainType: data.type || leg.product.categoryCode,
             firstClassSeats: firstClassSeats,
-            secondClassSeats: secondClassSeats
+            secondClassSeats: secondClassSeats,
+            carriageCount: carriageCount
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -272,6 +276,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const results = await Promise.all(promises);
       const newTrainTypes: { [key: string]: string } = {};
       const newSeatingData: { [key: string]: { first: number; second: number } } = {};
+      const newCarriageData: { [key: string]: { carriageCount: number } } = {};
       
       results.forEach(result => {
         if (result) {
@@ -279,6 +284,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           newSeatingData[result.legKey] = {
             first: result.firstClassSeats || 0,
             second: result.secondClassSeats || 0
+          };
+          newCarriageData[result.legKey] = {
+            carriageCount: result.carriageCount || 0
           };
           
           // Emit custom event for the filter to listen to
@@ -290,6 +298,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
       setLegTrainTypes(newTrainTypes);
       setLegSeatingData(newSeatingData);
+      setLegCarriageData(newCarriageData);
       setApiCallDetails(apiCalls);
       
       // Emit enhanced types to parent component for filtering
@@ -409,6 +418,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           originalDestination={lastLeg.destination.name}
           legSeatingData={legSeatingData}
           legTrainTypes={legTrainTypes}
+          legCarriageData={legCarriageData}
         />
           
           {/* API Call Details Section */}

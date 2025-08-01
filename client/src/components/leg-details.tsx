@@ -8,9 +8,10 @@ interface LegDetailsProps {
   originalDestination?: string;
   legSeatingData?: { [key: string]: { first: number; second: number } };
   legTrainTypes?: { [key: string]: string };
+  legCarriageData?: { [key: string]: { carriageCount: number } };
 }
 
-export default function LegDetails({ legs, originalDestination, legSeatingData, legTrainTypes }: LegDetailsProps) {
+export default function LegDetails({ legs, originalDestination, legSeatingData, legTrainTypes, legCarriageData }: LegDetailsProps) {
   const [expandedLegs, setExpandedLegs] = useState<Set<string>>(new Set());
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -249,24 +250,41 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
             const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
             const seatingData = legSeatingData[legKey];
             const trainType = legTrainTypes[legKey];
+            const carriageData = legCarriageData?.[legKey];
             
             if (seatingData) {
+              // Calculate average seats per carriage and estimate 1st class carriages
+              const totalSeats = seatingData.first + seatingData.second;
+              const carriageCount = carriageData?.carriageCount || Math.ceil(totalSeats / 120); // Fallback estimate
+              const avgSeatsPerCarriage = Math.round(totalSeats / carriageCount);
+              
+              // Estimate 1st class carriages (typically 15-25% of total carriages for IC/ICD trains)
+              const firstClassRatio = trainType === 'ICD' || trainType === 'IC' ? 0.2 : 0.15;
+              const estimatedFirstClassCarriages = Math.max(1, Math.round(carriageCount * firstClassRatio));
+              
               return (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-3">
                       <div className="text-sm font-medium text-blue-800">
-                        {trainType || leg.product.categoryCode} Seating
+                        {trainType || leg.product.categoryCode} - {carriageCount} carriages
                       </div>
                       <div className="text-xs text-blue-600">
-                        1st class: {seatingData.first} seats
-                      </div>
-                      <div className="text-xs text-blue-600">
-                        2nd class: {seatingData.second} seats
+                        Avg: {avgSeatsPerCarriage} seats/carriage
                       </div>
                     </div>
                     <div className="text-xs text-blue-600 font-medium">
-                      Total: {seatingData.first + seatingData.second} seats
+                      Total: {totalSeats} seats
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-xs text-blue-600">
+                        1st class: {seatingData.first} seats (~{estimatedFirstClassCarriages} carriages)
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        2nd class: {seatingData.second} seats (~{carriageCount - estimatedFirstClassCarriages} carriages)
+                      </div>
                     </div>
                   </div>
                 </div>
