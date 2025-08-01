@@ -8,11 +8,12 @@ interface LegDetailsProps {
   originalDestination?: string;
   legSeatingData?: { [key: string]: { first: number; second: number } };
   legTrainTypes?: { [key: string]: string };
-  legCarriageData?: { [key: string]: { carriageCount: number } };
+  legCarriageData?: { [key: string]: { carriageCount: number; bakkenImages: string[] } };
 }
 
 export default function LegDetails({ legs, originalDestination, legSeatingData, legTrainTypes, legCarriageData }: LegDetailsProps) {
   const [expandedLegs, setExpandedLegs] = useState<Set<string>>(new Set());
+  const [expandedTrainImages, setExpandedTrainImages] = useState<Set<string>>(new Set());
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     fromStation: string;
@@ -258,9 +259,14 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
               const carriageCount = carriageData?.carriageCount || Math.ceil(totalSeats / 120); // Fallback estimate
               const avgSeatsPerCarriage = Math.round(totalSeats / carriageCount);
               
-              // Estimate 1st class carriages (typically 15-25% of total carriages for IC/ICD trains)
-              const firstClassRatio = trainType === 'ICD' || trainType === 'IC' ? 0.2 : 0.15;
-              const estimatedFirstClassCarriages = Math.max(1, Math.round(carriageCount * firstClassRatio));
+              // Estimate 1st class carriages based on seating capacity
+              // 1st class seats typically take 1.5x more space than 2nd class
+              const firstClassSpaceUnits = seatingData.first * 1.5;
+              const secondClassSpaceUnits = seatingData.second * 1.0;
+              const totalSpaceUnits = firstClassSpaceUnits + secondClassSpaceUnits;
+              
+              const estimatedFirstClassCarriages = carriageCount > 0 ? 
+                Math.max(1, Math.round((firstClassSpaceUnits / totalSpaceUnits) * carriageCount)) : 0;
               
               return (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
@@ -277,7 +283,7 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                       Total: {totalSeats} seats
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-3">
                       <div className="text-xs text-blue-600">
                         1st class: {seatingData.first} seats (~{estimatedFirstClassCarriages} carriages)
@@ -287,6 +293,45 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Train Images Toggle */}
+                  {carriageData?.bakkenImages && carriageData.bakkenImages.length > 0 && (
+                    <div>
+                      <button
+                        onClick={() => {
+                          const newExpanded = new Set(expandedTrainImages);
+                          if (newExpanded.has(legKey)) {
+                            newExpanded.delete(legKey);
+                          } else {
+                            newExpanded.add(legKey);
+                          }
+                          setExpandedTrainImages(newExpanded);
+                        }}
+                        className="text-xs text-blue-700 hover:text-blue-900 underline mb-2"
+                      >
+                        {expandedTrainImages.has(legKey) ? 'Hide' : 'Show'} Train Layout ({carriageData.bakkenImages.length} carriages)
+                      </button>
+                      
+                      {/* Train Images - Stacked Vertically */}
+                      {expandedTrainImages.has(legKey) && (
+                        <div className="mt-2 space-y-1">
+                          {carriageData.bakkenImages.map((imageUrl, index) => (
+                            <div key={index} className="bg-white border border-blue-200 rounded p-2">
+                              <div className="text-xs text-blue-600 mb-1">Carriage {index + 1}</div>
+                              <img
+                                src={imageUrl}
+                                alt={`Carriage ${index + 1} layout`}
+                                className="w-full h-auto max-h-24 object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             }

@@ -97,7 +97,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   // State to store train types and seating data for each leg and API call details
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
   const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: { first: number; second: number } }>({});
-  const [legCarriageData, setLegCarriageData] = useState<{ [key: string]: { carriageCount: number } }>({});
+  const [legCarriageData, setLegCarriageData] = useState<{ [key: string]: { carriageCount: number; bakkenImages: string[] } }>({});
   const [apiCallDetails, setApiCallDetails] = useState<Array<{
     url: string;
     response: any;
@@ -235,16 +235,22 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             return null;
           }
 
-          // Extract seat counts and carriage count from Virtual Train API response
+          // Extract seat counts, carriage count, and bakken images from Virtual Train API response
           let firstClassSeats = 0;
           let secondClassSeats = 0;
           let carriageCount = 0;
+          let bakkenImages: string[] = [];
           
           if (data.materieeldelen && data.materieeldelen.length > 0) {
             data.materieeldelen.forEach((deel: any) => {
-              // Count carriages from bakken array
+              // Count carriages from bakken array and collect images
               if (deel.bakken && deel.bakken.length > 0) {
                 carriageCount += deel.bakken.length;
+                deel.bakken.forEach((bak: any) => {
+                  if (bak.afbeelding && bak.afbeelding.url) {
+                    bakkenImages.push(bak.afbeelding.url);
+                  }
+                });
               }
               // Sum seating from materieeldeel level
               if (deel.zitplaatsen) {
@@ -259,7 +265,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             trainType: data.type || leg.product.categoryCode,
             firstClassSeats: firstClassSeats,
             secondClassSeats: secondClassSeats,
-            carriageCount: carriageCount
+            carriageCount: carriageCount,
+            bakkenImages: bakkenImages
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -280,7 +287,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const results = await Promise.all(promises);
       const newTrainTypes: { [key: string]: string } = {};
       const newSeatingData: { [key: string]: { first: number; second: number } } = {};
-      const newCarriageData: { [key: string]: { carriageCount: number } } = {};
+      const newCarriageData: { [key: string]: { carriageCount: number; bakkenImages: string[] } } = {};
       
       results.forEach(result => {
         if (result) {
@@ -290,7 +297,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             second: result.secondClassSeats || 0
           };
           newCarriageData[result.legKey] = {
-            carriageCount: result.carriageCount || 0
+            carriageCount: result.carriageCount || 0,
+            bakkenImages: result.bakkenImages || []
           };
           
           // Emit custom event for the filter to listen to
