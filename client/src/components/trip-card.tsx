@@ -110,15 +110,25 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           
           if (!trainNumber || !destinationStationCode) return null;
 
-          const url = `/api/train/${trainNumber}/${encodeURIComponent(destinationStationCode)}?dateTime=${encodeURIComponent(dateTime)}`;
+          // For static deployment, make direct call to NS Virtual Train API with CORS
+          const virtualTrainUrl = `https://gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein/${trainNumber}/${encodeURIComponent(destinationStationCode)}?dateTime=${encodeURIComponent(dateTime)}`;
           const timestamp = new Date().toISOString();
+
+          const response = await fetch(virtualTrainUrl, {
+            headers: {
+              'Ocp-Apim-Subscription-Key': import.meta.env.VITE_NS_API_KEY || '',
+            }
+          });
           
-          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
           const data = await response.json();
 
           // Store API call details
           apiCalls.push({
-            url,
+            url: virtualTrainUrl,
             response: data,
             error: response.ok ? undefined : `${response.status}: ${response.statusText}`,
             timestamp
