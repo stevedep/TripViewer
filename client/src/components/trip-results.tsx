@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { List, AlertCircle, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import TripCard from "@/components/trip-card";
+import TripCard from "./trip-card";
 import { NSApiResponseSchema, type NSApiResponse, type TripSearch } from "@shared/schema";
 
 export default function TripResults() {
@@ -10,7 +10,7 @@ export default function TripResults() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [transferFilter, setTransferFilter] = useState<number | null>(null);
-  const [additionalTrips, setAdditionalTrips] = useState<NSApiResponse["trips"]>([]);
+  const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Listen for search events
@@ -19,8 +19,8 @@ export default function TripResults() {
       console.log("TripResults received search event:", event.detail);
       setSearchParams(event.detail);
       setIsLoading(true);
-      // Reset additional trips and filter when new search is performed
-      setAdditionalTrips([]);
+      // Reset all trips and filter when new search is performed
+      setAllTrips([]);
       setTransferFilter(null);
     };
 
@@ -137,8 +137,24 @@ export default function TripResults() {
     );
   }
 
-  // Combine original trips with additional trips
-  const allTrips = data && data.trips ? [...data.trips, ...additionalTrips] : [];
+  // Initialize all trips with data when available
+  useEffect(() => {
+    if (data && data.trips) {
+      setAllTrips(data.trips);
+    }
+  }, [data]);
+
+  // Function to remove duplicate trips based on uid
+  const removeDuplicates = (trips: NSApiResponse["trips"]) => {
+    const seen = new Set();
+    return trips.filter(trip => {
+      if (seen.has(trip.uid)) {
+        return false;
+      }
+      seen.add(trip.uid);
+      return true;
+    });
+  };
 
   // Function to load more trips using the last trip's arrival time
   const loadMoreTrips = async () => {
@@ -146,8 +162,10 @@ export default function TripResults() {
     
     setLoadingMore(true);
     try {
+      const currentTrips = allTrips.length > 0 ? allTrips : data.trips;
+      
       // Get the last trip's arrival time
-      const lastTrip = allTrips[allTrips.length - 1];
+      const lastTrip = currentTrips[currentTrips.length - 1];
       const lastArrivalTime = lastTrip.legs[lastTrip.legs.length - 1].destination.actualDateTime || 
                              lastTrip.legs[lastTrip.legs.length - 1].destination.plannedDateTime;
       
@@ -163,7 +181,10 @@ export default function TripResults() {
       if (response.ok) {
         const moreTripsData = await response.json();
         if (moreTripsData.trips && moreTripsData.trips.length > 0) {
-          setAdditionalTrips(prev => [...prev, ...moreTripsData.trips]);
+          // Combine and remove duplicates before setting
+          const combinedTrips = [...currentTrips, ...moreTripsData.trips];
+          const uniqueTrips = removeDuplicates(combinedTrips);
+          setAllTrips(uniqueTrips);
         }
       }
     } catch (error) {
@@ -175,13 +196,18 @@ export default function TripResults() {
 
   // Show results if we have data, regardless of error state
   if (data && data.trips && data.trips.length > 0) {
+    // Use allTrips for everything (includes original + additional trips without duplicates)
+    const currentTrips = allTrips.length > 0 ? allTrips : data.trips;
+    
     // Filter trips based on transfer filter
     const filteredTrips = transferFilter !== null 
-      ? allTrips.filter(trip => trip.transfers === transferFilter)
-      : allTrips;
+      ? currentTrips.filter(trip => trip.transfers === transferFilter)
+      : currentTrips;
 
     // Get unique transfer counts for filter options
-    const transferCounts = [...new Set(allTrips.map(trip => trip.transfers))].sort((a, b) => a - b);
+    const transferCounts = Array.from(new Set(currentTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
+    
+    const additionalCount = allTrips.length - (data?.trips?.length || 0);
 
     return (
       <div className="space-y-4">
@@ -192,12 +218,12 @@ export default function TripResults() {
           </h2>
           <div className="text-sm text-gray-600">
             {transferFilter !== null 
-              ? `${filteredTrips.length} of ${allTrips.length} trips (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})`
-              : `${allTrips.length} trips found`
+              ? `${filteredTrips.length} of ${currentTrips.length} trips (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})`
+              : `${currentTrips.length} trips found`
             }
-            {additionalTrips.length > 0 && (
+            {additionalCount > 0 && (
               <span className="ml-2 text-ns-blue">
-                (includes {additionalTrips.length} additional)
+                (includes {additionalCount} additional)
               </span>
             )}
           </div>
@@ -215,7 +241,7 @@ export default function TripResults() {
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
               }`}
             >
-              All ({allTrips.length})
+              All ({currentTrips.length})
             </button>
             {transferCounts.map(count => (
               <button
@@ -227,7 +253,7 @@ export default function TripResults() {
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
                 }`}
               >
-                {count} transfer{count !== 1 ? 's' : ''} ({allTrips.filter(trip => trip.transfers === count).length})
+                {count} transfer{count !== 1 ? 's' : ''} ({currentTrips.filter(trip => trip.transfers === count).length})
               </button>
             ))}
           </div>
@@ -267,8 +293,8 @@ export default function TripResults() {
                 <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
                 <p><strong>Original Data (${data?.trips?.length || 0} trips):</strong></p>
                 <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
-                <p><strong>Additional Trips (${additionalTrips.length} trips):</strong></p>
-                <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(additionalTrips, null, 2)}</pre>
+                <p><strong>All Trips (${allTrips.length} total, ${additionalCount} additional):</strong></p>
+                <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(allTrips, null, 2)}</pre>
                 <p><strong>Error:</strong></p>
                 <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
                 <p><strong>Query State:</strong></p>
@@ -280,7 +306,7 @@ export default function TripResults() {
 
         {filteredTrips.length > 0 ? (
           filteredTrips.map((trip, index) => (
-            <TripCard key={trip.uid || index} trip={trip} />
+            <TripCard key={`${trip.uid}-${index}`} trip={trip} />
           ))
         ) : (
           <Card className="bg-gray-50 border border-gray-200 rounded-lg">
