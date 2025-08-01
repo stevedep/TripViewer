@@ -12,18 +12,21 @@ export default function TripResults() {
   // Listen for search events
   useEffect(() => {
     const handleSearch = (event: CustomEvent<TripSearch>) => {
+      console.log("TripResults received search event:", event.detail);
       setSearchParams(event.detail);
       setIsLoading(true);
     };
 
+    console.log("TripResults: Adding event listener for tripSearch");
     window.addEventListener('tripSearch', handleSearch as EventListener);
     return () => {
+      console.log("TripResults: Removing event listener for tripSearch");
       window.removeEventListener('tripSearch', handleSearch as EventListener);
     };
   }, []);
 
   // Query trips data
-  const { data, error, isError } = useQuery<NSApiResponse>({
+  const { data, error, isError, isLoading: queryLoading } = useQuery<NSApiResponse>({
     queryKey: ["/api/trips", searchParams?.fromStation, searchParams?.toStation, searchParams?.dateTime],
     enabled: !!searchParams,
     meta: {
@@ -31,13 +34,30 @@ export default function TripResults() {
     },
   });
 
+  // Debug: Log the current state
+  console.log("TripResults Debug:", {
+    searchParams,
+    data,
+    error,
+    isError,
+    queryLoading,
+    isLoading
+  });
+
   // Loading state
-  if (isLoading) {
+  if (isLoading || queryLoading) {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center space-x-2 text-ns-blue">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ns-blue"></div>
           <span className="text-lg font-medium">Searching for trips...</span>
+        </div>
+        {/* Debug information */}
+        <div className="mt-4 p-4 bg-gray-100 rounded-lg text-left text-sm">
+          <h4 className="font-bold mb-2">Debug Info:</h4>
+          <p><strong>Search Params:</strong> {JSON.stringify(searchParams, null, 2)}</p>
+          <p><strong>Query Loading:</strong> {String(queryLoading)}</p>
+          <p><strong>Is Loading:</strong> {String(isLoading)}</p>
         </div>
       </div>
     );
@@ -68,6 +88,13 @@ export default function TripResults() {
           <p className="text-blue-600">
             Enter your travel details above and click "Search Trips" to find available journeys.
           </p>
+          {/* Debug information */}
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg text-left text-sm">
+            <h4 className="font-bold mb-2">Debug Info:</h4>
+            <p><strong>Search Params:</strong> {searchParams ? JSON.stringify(searchParams, null, 2) : "None"}</p>
+            <p><strong>Data:</strong> {data ? JSON.stringify(data, null, 2) : "None"}</p>
+            <p><strong>Error:</strong> {error ? String(error) : "None"}</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -99,6 +126,15 @@ export default function TripResults() {
         <div className="text-sm text-gray-600">
           {data?.trips?.length || 0} trips found
         </div>
+      </div>
+
+      {/* Debug information */}
+      <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
+        <h4 className="font-bold mb-2">Debug Info:</h4>
+        <p><strong>Search Params:</strong> {JSON.stringify(searchParams, null, 2)}</p>
+        <p><strong>Data:</strong> {data ? `${data.trips?.length || 0} trips found` : "No data"}</p>
+        <p><strong>API Response:</strong> {data ? JSON.stringify(data, null, 2).substring(0, 500) + "..." : "None"}</p>
+        <p><strong>Error:</strong> {error ? String(error) : "None"}</p>
       </div>
 
       {data?.trips?.map((trip, index) => (

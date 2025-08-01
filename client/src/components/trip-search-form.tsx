@@ -34,6 +34,8 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
   });
 
   const onSubmit = async (data: TripSearch) => {
+    console.log("Search form onSubmit called with:", data);
+    
     if (data.fromStation === data.toStation) {
       toast({
         title: "Invalid Selection",
@@ -45,6 +47,8 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
 
     setIsSearching(true);
     try {
+      console.log("Dispatching tripSearch event with data:", data);
+      
       if (onSearch) {
         onSearch(data);
       }
@@ -52,7 +56,10 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
       // Dispatch custom event to trigger search
       const searchEvent = new CustomEvent('tripSearch', { detail: data });
       window.dispatchEvent(searchEvent);
+      
+      console.log("Search event dispatched successfully");
     } catch (error) {
+      console.error("Search error:", error);
       toast({
         title: "Search Error",
         description: "Failed to search for trips. Please try again.",
