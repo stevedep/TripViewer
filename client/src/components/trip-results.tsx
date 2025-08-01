@@ -8,6 +8,7 @@ import { NSApiResponseSchema, type NSApiResponse, type TripSearch } from "@share
 export default function TripResults() {
   const [searchParams, setSearchParams] = useState<TripSearch | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
   // Listen for search events
   useEffect(() => {
@@ -144,19 +145,29 @@ export default function TripResults() {
           </div>
         </div>
 
-        {/* Debug information */}
-        <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
-          <h4 className="font-bold mb-2">Full API Debug Info:</h4>
-          <div className="space-y-2">
-            <p><strong>Search Params:</strong></p>
-            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
-            <p><strong>Data (${data?.trips?.length || 0} trips):</strong></p>
-            <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
-            <p><strong>Error:</strong></p>
-            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
-            <p><strong>Query State:</strong></p>
-            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify({isError, queryLoading, isLoading}, null, 2)}</pre>
-          </div>
+        {/* Debug information - Hidden by default */}
+        <div className="mb-4">
+          <button 
+            onClick={() => setShowDebugInfo(!showDebugInfo)}
+            className="text-sm text-gray-600 hover:text-gray-800 underline mb-2"
+          >
+            {showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info'}
+          </button>
+          {showDebugInfo && (
+            <div className="p-4 bg-gray-100 rounded-lg text-sm">
+              <h4 className="font-bold mb-2">Full API Debug Info:</h4>
+              <div className="space-y-2">
+                <p><strong>Search Params:</strong></p>
+                <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
+                <p><strong>Data (${data?.trips?.length || 0} trips):</strong></p>
+                <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
+                <p><strong>Error:</strong></p>
+                <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
+                <p><strong>Query State:</strong></p>
+                <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify({isError, queryLoading, isLoading}, null, 2)}</pre>
+              </div>
+            </div>
+          )}
         </div>
 
         {data?.trips?.map((trip, index) => (

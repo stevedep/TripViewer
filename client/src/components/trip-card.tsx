@@ -68,8 +68,15 @@ export default function TripCard({ trip }: TripCardProps) {
     return "bg-ns-blue";
   };
 
-  // State to store train types for each leg
+  // State to store train types for each leg and API call details
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
+  const [apiCallDetails, setApiCallDetails] = useState<Array<{
+    url: string;
+    response: any;
+    error?: string;
+    timestamp: string;
+  }>>([]);
+  const [showApiDetails, setShowApiDetails] = useState(false);
 
   // Get leg category codes for display
   const getLegCategoryCodes = () => {
@@ -83,6 +90,13 @@ export default function TripCard({ trip }: TripCardProps) {
   // Fetch train details for each leg to get the actual train type
   useEffect(() => {
     const fetchTrainDetails = async () => {
+      const apiCalls: Array<{
+        url: string;
+        response: any;
+        error?: string;
+        timestamp: string;
+      }> = [];
+
       const promises = trip.legs.map(async (leg) => {
         try {
           // Extract train number and direction from the leg
@@ -92,20 +106,41 @@ export default function TripCard({ trip }: TripCardProps) {
           
           if (!trainNumber || !direction) return null;
 
-          const response = await fetch(`/api/train/${trainNumber}/${encodeURIComponent(direction)}?dateTime=${encodeURIComponent(dateTime)}`);
+          const url = `/api/train/${trainNumber}/${encodeURIComponent(direction)}?dateTime=${encodeURIComponent(dateTime)}`;
+          const timestamp = new Date().toISOString();
+          
+          const response = await fetch(url);
+          const data = await response.json();
+
+          // Store API call details
+          apiCalls.push({
+            url,
+            response: data,
+            error: response.ok ? undefined : `${response.status}: ${response.statusText}`,
+            timestamp
+          });
           
           if (!response.ok) {
             console.warn(`Failed to fetch train details for ${trainNumber}:`, response.statusText);
             return null;
           }
 
-          const data = await response.json();
           return {
             legKey: `${trainNumber}-${direction}`,
             trainType: data.type || leg.product.categoryCode
           };
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           console.warn(`Error fetching train details for leg:`, error);
+          
+          // Store error details
+          apiCalls.push({
+            url: `Error constructing URL for leg ${leg.product.number}`,
+            response: null,
+            error: errorMessage,
+            timestamp: new Date().toISOString()
+          });
+          
           return null;
         }
       });
@@ -120,6 +155,7 @@ export default function TripCard({ trip }: TripCardProps) {
       });
 
       setLegTrainTypes(newTrainTypes);
+      setApiCallDetails(apiCalls);
     };
 
     if (trip.legs.length > 0) {
@@ -204,6 +240,55 @@ export default function TripCard({ trip }: TripCardProps) {
       {showDetails && (
         <CardContent className="p-6">
           <LegDetails legs={trip.legs} />
+          
+          {/* API Call Details Section */}
+          <div className="mt-6 border-t pt-4">
+            <button 
+              onClick={() => setShowApiDetails(!showApiDetails)}
+              className="text-sm text-gray-600 hover:text-gray-800 underline mb-2"
+            >
+              {showApiDetails ? 'Hide API Call Details' : 'Show API Call Details'}
+            </button>
+            
+            {showApiDetails && apiCallDetails.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-800">Virtual Train API Calls</h4>
+                {apiCallDetails.map((apiCall, index) => (
+                  <div key={index} className="bg-gray-50 p-3 rounded-lg text-sm">
+                    <div className="mb-2">
+                      <span className="font-medium text-gray-700">Call #{index + 1}:</span>
+                      <span className="ml-2 text-xs text-gray-500">{apiCall.timestamp}</span>
+                    </div>
+                    
+                    <div className="mb-2">
+                      <span className="font-medium text-gray-700">URL:</span>
+                      <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{apiCall.url}</code>
+                    </div>
+                    
+                    {apiCall.error && (
+                      <div className="mb-2">
+                        <span className="font-medium text-red-600">Error:</span>
+                        <span className="ml-2 text-red-600 text-xs">{apiCall.error}</span>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <span className="font-medium text-gray-700">Response:</span>
+                      <pre className="bg-white p-2 rounded mt-1 text-xs overflow-auto max-h-32 border">
+                        {JSON.stringify(apiCall.response, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {showApiDetails && apiCallDetails.length === 0 && (
+              <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600">
+                No API calls made yet. Virtual train API calls will appear here when the component loads.
+              </div>
+            )}
+          </div>
         </CardContent>
       )}
 
