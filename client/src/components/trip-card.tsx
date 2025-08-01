@@ -132,7 +132,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return Math.max(0, Math.round(waitingMs / (1000 * 60))); // Convert to minutes, minimum 0
   };
 
-  // Generate detailed header structure: x transfers - [station] - (waiting : platform) - material - [station] etc
+  // Generate detailed header structure: x transfers - [station] - (waiting : arrival platform -> departure platform) - material - [station] etc
   const getDetailedHeader = () => {
     const parts: string[] = [];
     
@@ -144,13 +144,23 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
       const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
       const waitingTime = getWaitingTime(index);
-      const platform = leg.origin.actualTrack || leg.origin.plannedTrack || "?";
       
-      // Add station code where you get on the train
-      parts.push(`[${leg.origin.stationCode || leg.origin.name}]`);
+      // Get platform information
+      const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack || "?";
+      let platformInfo = departurePlatform;
       
-      // Add waiting time and platform
-      parts.push(`(${waitingTime} min : platform ${platform})`);
+      // For transfers (not first leg), show arrival -> departure platform
+      if (index > 0) {
+        const previousLeg = trip.legs[index - 1];
+        const arrivalPlatform = previousLeg.destination.actualTrack || previousLeg.destination.plannedTrack || "?";
+        platformInfo = `${arrivalPlatform} -> ${departurePlatform}`;
+      }
+      
+      // Add full station name where you get on the train
+      parts.push(`[${leg.origin.name}]`);
+      
+      // Add waiting time and platform info
+      parts.push(`(${waitingTime} min : ${platformInfo})`);
       
       // Add material/train type
       parts.push(trainType);
