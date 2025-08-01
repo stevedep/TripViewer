@@ -241,8 +241,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           let carriageCount = 0;
           
           if (data.materieeldelen && data.materieeldelen.length > 0) {
-            carriageCount = data.materieeldelen.length; // Number of carriages is the number of materieeldelen
             data.materieeldelen.forEach((deel: any) => {
+              // Count carriages from bakken array
+              if (deel.bakken && deel.bakken.length > 0) {
+                carriageCount += deel.bakken.length;
+              }
+              // Sum seating from materieeldeel level
               if (deel.zitplaatsen) {
                 firstClassSeats += deel.zitplaatsen.zitplaatsEersteKlas || 0;
                 secondClassSeats += deel.zitplaatsen.zitplaatsTweedeKlas || 0;
