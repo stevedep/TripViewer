@@ -1,13 +1,26 @@
 import { useState } from "react";
-import { Route, ChevronDown, ChevronUp } from "lucide-react";
+import { Route, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { type Leg } from "@shared/schema";
+import AlternativeTripsModal from "./alternative-trips-modal";
 
 interface LegDetailsProps {
   legs: Leg[];
+  originalDestination?: string;
 }
 
-export default function LegDetails({ legs }: LegDetailsProps) {
+export default function LegDetails({ legs, originalDestination }: LegDetailsProps) {
   const [expandedLegs, setExpandedLegs] = useState<Set<string>>(new Set());
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    fromStation: string;
+    toStation: string;
+    fromDateTime: string;
+  }>({
+    isOpen: false,
+    fromStation: "",
+    toStation: "",
+    fromDateTime: ""
+  });
 
   const toggleLegStops = (legIdx: string) => {
     const newExpanded = new Set(expandedLegs);
@@ -66,6 +79,32 @@ export default function LegDetails({ legs }: LegDetailsProps) {
     }
   };
 
+  // Calculate transfer time between legs
+  const getTransferTime = (legIndex: number) => {
+    if (legIndex === 0) return null;
+    
+    const previousLeg = legs[legIndex - 1];
+    const currentLeg = legs[legIndex];
+    
+    const arrivalTime = new Date(previousLeg.destination.actualDateTime || previousLeg.destination.plannedDateTime);
+    const departureTime = new Date(currentLeg.origin.actualDateTime || currentLeg.origin.plannedDateTime);
+    
+    const transferMinutes = Math.round((departureTime.getTime() - arrivalTime.getTime()) / (1000 * 60));
+    return transferMinutes;
+  };
+
+  // Handle station click
+  const handleStationClick = (stationName: string, dateTime: string) => {
+    if (!originalDestination) return;
+    
+    setModalState({
+      isOpen: true,
+      fromStation: stationName,
+      toStation: originalDestination,
+      fromDateTime: dateTime
+    });
+  };
+
   // Calculate stop duration
   const getStopDuration = (arrival?: string, departure?: string) => {
     if (!arrival || !departure) return "0 min stop";
@@ -78,14 +117,31 @@ export default function LegDetails({ legs }: LegDetailsProps) {
   };
 
   return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-        <Route className="text-ns-blue mr-2" />
-        Journey Details
-      </h3>
+    <>
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <Route className="text-ns-blue mr-2" />
+          Journey Details
+        </h3>
 
-      {legs.map((leg, index) => (
-        <div key={leg.idx || index} className="border border-gray-200 rounded-lg p-4 mb-4 last:mb-0">
+        {legs.map((leg, index) => {
+          const transferTime = getTransferTime(index);
+          
+          return (
+            <div key={leg.idx || index}>
+              {/* Transfer Time Display */}
+              {transferTime !== null && (
+                <div className="flex items-center justify-center py-2 mb-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-full px-3 py-1 flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-700 font-medium">
+                      {transferTime} min transfer time
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="border border-gray-200 rounded-lg p-4 mb-4 last:mb-0">
           {/* Leg Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-3">
@@ -106,7 +162,12 @@ export default function LegDetails({ legs }: LegDetailsProps) {
             <div className="flex items-start space-x-3">
               <div className="bg-green-500 w-3 h-3 rounded-full mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-semibold text-gray-800">{leg.origin.name}</div>
+                <div 
+                  className="font-semibold text-gray-800 cursor-pointer hover:text-ns-blue hover:underline"
+                  onClick={() => handleStationClick(leg.origin.name, leg.origin.actualDateTime || leg.origin.plannedDateTime)}
+                >
+                  {leg.origin.name}
+                </div>
                 <div className="text-sm text-gray-600">
                   Departure: {formatTime(leg.origin.actualDateTime || leg.origin.plannedDateTime)}
                 </div>
@@ -134,7 +195,12 @@ export default function LegDetails({ legs }: LegDetailsProps) {
             <div className="flex items-start space-x-3">
               <div className="bg-red-500 w-3 h-3 rounded-full mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-semibold text-gray-800">{leg.destination.name}</div>
+                <div 
+                  className="font-semibold text-gray-800 cursor-pointer hover:text-ns-blue hover:underline"
+                  onClick={() => handleStationClick(leg.destination.name, leg.destination.actualDateTime || leg.destination.plannedDateTime)}
+                >
+                  {leg.destination.name}
+                </div>
                 <div className="text-sm text-gray-600">
                   Arrival: {formatTime(leg.destination.actualDateTime || leg.destination.plannedDateTime)}
                 </div>
@@ -207,8 +273,21 @@ export default function LegDetails({ legs }: LegDetailsProps) {
               )}
             </div>
           )}
-        </div>
-      ))}
-    </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Alternative Trips Modal */}
+      <AlternativeTripsModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+        fromStation={modalState.fromStation}
+        toStation={modalState.toStation}
+        fromDateTime={modalState.fromDateTime}
+        originalDestination={originalDestination || ""}
+      />
+    </>
   );
 }
