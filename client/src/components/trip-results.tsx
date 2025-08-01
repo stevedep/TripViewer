@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { List, AlertCircle, Clock } from "lucide-react";
+import { List, AlertCircle, Clock, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TripCard from "./trip-card";
 import { NSApiResponseSchema, type NSApiResponse, type TripSearch } from "@shared/schema";
 
@@ -10,6 +12,7 @@ export default function TripResults() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [transferFilter, setTransferFilter] = useState<number | null>(null);
+  const [materialTypeFilter, setMaterialTypeFilter] = useState<string | null>(null);
   const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -19,9 +22,10 @@ export default function TripResults() {
       console.log("TripResults received search event:", event.detail);
       setSearchParams(event.detail);
       setIsLoading(true);
-      // Reset all trips and filter when new search is performed
+      // Reset all trips and filters when new search is performed
       setAllTrips([]);
       setTransferFilter(null);
+      setMaterialTypeFilter(null);
     };
 
     console.log("TripResults: Adding event listener for tripSearch");
@@ -191,13 +195,37 @@ export default function TripResults() {
     // Use allTrips for everything (includes original + additional trips without duplicates)
     const currentTrips = allTrips.length > 0 ? allTrips : data.trips;
     
-    // Filter trips based on transfer filter
-    const filteredTrips = transferFilter !== null 
-      ? currentTrips.filter(trip => trip.transfers === transferFilter)
-      : currentTrips;
+    // Get all unique material types from all trips
+    const getAllMaterialTypes = (trips: NSApiResponse["trips"]) => {
+      const materialTypes = new Set<string>();
+      trips.forEach(trip => {
+        trip.legs.forEach(leg => {
+          if (leg.product?.categoryCode) {
+            materialTypes.add(leg.product.categoryCode);
+          }
+        });
+      });
+      return Array.from(materialTypes).sort();
+    };
 
-    // Get unique transfer counts for filter options
+    // Filter trips based on both transfer and material type filters
+    let filteredTrips = currentTrips;
+    
+    // Apply transfer filter
+    if (transferFilter !== null) {
+      filteredTrips = filteredTrips.filter(trip => trip.transfers === transferFilter);
+    }
+    
+    // Apply material type filter
+    if (materialTypeFilter) {
+      filteredTrips = filteredTrips.filter(trip => 
+        trip.legs.some(leg => leg.product?.categoryCode === materialTypeFilter)
+      );
+    }
+
+    // Get unique transfer counts and material types for filter options
     const transferCounts = Array.from(new Set(currentTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
+    const availableMaterialTypes = getAllMaterialTypes(currentTrips);
     
     const additionalCount = allTrips.length - (data?.trips?.length || 0);
 
@@ -209,8 +237,8 @@ export default function TripResults() {
             Available Trips
           </h2>
           <div className="text-sm text-gray-600">
-            {transferFilter !== null 
-              ? `${filteredTrips.length} of ${currentTrips.length} trips (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})`
+            {(transferFilter !== null || materialTypeFilter !== null) 
+              ? `${filteredTrips.length} of ${currentTrips.length} trips${transferFilter !== null ? ` (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})` : ''}${materialTypeFilter ? ` (${materialTypeFilter})` : ''}`
               : `${currentTrips.length} trips found`
             }
             {additionalCount > 0 && (
@@ -221,33 +249,76 @@ export default function TripResults() {
           </div>
         </div>
 
-        {/* Transfer Filter */}
+        {/* Filters */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Filter by Transfers</h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setTransferFilter(null)}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                transferFilter === null
-                  ? 'bg-ns-blue text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
-              }`}
-            >
-              All ({currentTrips.length})
-            </button>
-            {transferCounts.map(count => (
-              <button
-                key={count}
-                onClick={() => setTransferFilter(count)}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  transferFilter === count
-                    ? 'bg-ns-blue text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
-                }`}
-              >
-                {count} transfer{count !== 1 ? 's' : ''} ({currentTrips.filter(trip => trip.transfers === count).length})
-              </button>
-            ))}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Transfer Filter */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter by Transfers
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setTransferFilter(null)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    transferFilter === null
+                      ? 'bg-ns-blue text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  All ({currentTrips.length})
+                </button>
+                {transferCounts.map(count => (
+                  <button
+                    key={count}
+                    onClick={() => setTransferFilter(count)}
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      transferFilter === count
+                        ? 'bg-ns-blue text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                    }`}
+                  >
+                    {count} transfer{count !== 1 ? 's' : ''} ({currentTrips.filter(trip => trip.transfers === count).length})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Material Type Filter */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter by Train Type
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setMaterialTypeFilter(null)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    materialTypeFilter === null
+                      ? 'bg-ns-blue text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  All Types ({currentTrips.length})
+                </button>
+                {availableMaterialTypes.map(materialType => (
+                  <button
+                    key={materialType}
+                    onClick={() => setMaterialTypeFilter(materialType)}
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      materialTypeFilter === materialType
+                        ? 'bg-ns-blue text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                    }`}
+                  >
+                    {materialType} ({currentTrips.filter(trip => 
+                      trip.legs.some(leg => leg.product?.categoryCode === materialType)
+                    ).length})
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           
           {/* Load More Trips Button */}
