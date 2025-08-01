@@ -195,15 +195,12 @@ export default function TripResults() {
     // Use allTrips for everything (includes original + additional trips without duplicates)
     const currentTrips = allTrips.length > 0 ? allTrips : data.trips;
     
-    // Get all unique material types from all trips
+    // Get all unique material types from all trips (matching what's shown in headers)
     const getAllMaterialTypes = (trips: NSApiResponse["trips"]) => {
       const materialTypes = new Set<string>();
       trips.forEach(trip => {
-        trip.legs.forEach(leg => {
-          if (leg.product?.categoryCode) {
-            materialTypes.add(leg.product.categoryCode);
-          }
-        });
+        const tripMaterialTypes = trip.legs.map(leg => leg.product?.categoryCode).filter(code => code && code.trim());
+        tripMaterialTypes.forEach(type => materialTypes.add(type));
       });
       return Array.from(materialTypes).sort();
     };
@@ -216,11 +213,12 @@ export default function TripResults() {
       filteredTrips = filteredTrips.filter(trip => trip.transfers === transferFilter);
     }
     
-    // Apply material type filter
+    // Apply material type filter (matching what's shown in trip headers)
     if (materialTypeFilter) {
-      filteredTrips = filteredTrips.filter(trip => 
-        trip.legs.some(leg => leg.product?.categoryCode === materialTypeFilter)
-      );
+      filteredTrips = filteredTrips.filter(trip => {
+        const tripMaterialTypes = trip.legs.map(leg => leg.product?.categoryCode).filter(code => code && code.trim());
+        return tripMaterialTypes.includes(materialTypeFilter);
+      });
     }
 
     // Get unique transfer counts and material types for filter options
@@ -312,9 +310,10 @@ export default function TripResults() {
                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
                     }`}
                   >
-                    {materialType} ({currentTrips.filter(trip => 
-                      trip.legs.some(leg => leg.product?.categoryCode === materialType)
-                    ).length})
+                    {materialType} ({currentTrips.filter(trip => {
+                      const tripMaterialTypes = trip.legs.map(leg => leg.product?.categoryCode).filter(code => code && code.trim());
+                      return tripMaterialTypes.includes(materialType);
+                    }).length})
                   </button>
                 ))}
               </div>
