@@ -94,8 +94,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return "bg-ns-blue";
   };
 
-  // State to store train types for each leg and API call details
+  // State to store train types and seating data for each leg and API call details
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
+  const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: number }>({});
   const [apiCallDetails, setApiCallDetails] = useState<Array<{
     url: string;
     response: any;
@@ -166,8 +167,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
       const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
       
-      // Get seating information (placeholder for now - would need API data for actual counts)
-      const firstClassSeats = "?"; // Would come from train composition API
+      // Get seating information from Virtual Train API data
+      const firstClassSeats = legSeatingData[legKey] || "?";
       materialParts.push(`${trainType} : ${firstClassSeats} first class seats`);
     });
     
@@ -226,9 +227,24 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             return null;
           }
 
+          // Extract first class seat count from Virtual Train API response
+          let firstClassSeats = 0;
+          if (data.materieelDelenDrukteInformatie) {
+            data.materieelDelenDrukteInformatie.forEach((deel: any) => {
+              if (deel.materieelDeelNummer && deel.klassen) {
+                deel.klassen.forEach((klasse: any) => {
+                  if (klasse.klasse === "FIRST" && klasse.zitplaatsen) {
+                    firstClassSeats += klasse.zitplaatsen.length;
+                  }
+                });
+              }
+            });
+          }
+
           return {
             legKey: `${trainNumber}-${destinationStationCode}`,
-            trainType: data.type || leg.product.categoryCode
+            trainType: data.type || leg.product.categoryCode,
+            firstClassSeats: firstClassSeats
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -248,10 +264,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
       const results = await Promise.all(promises);
       const newTrainTypes: { [key: string]: string } = {};
+      const newSeatingData: { [key: string]: number } = {};
       
       results.forEach(result => {
         if (result) {
           newTrainTypes[result.legKey] = result.trainType;
+          newSeatingData[result.legKey] = result.firstClassSeats || 0;
           
           // Emit custom event for the filter to listen to
           window.dispatchEvent(new CustomEvent('trainTypeUpdated', {
@@ -261,6 +279,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       });
 
       setLegTrainTypes(newTrainTypes);
+      setLegSeatingData(newSeatingData);
       setApiCallDetails(apiCalls);
       
       // Emit enhanced types to parent component for filtering
