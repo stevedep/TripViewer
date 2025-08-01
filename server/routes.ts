@@ -51,6 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.json();
+      console.log("NS API Response:", JSON.stringify(data, null, 2).substring(0, 500) + "...");
       res.json(data);
     } catch (error) {
       console.error("Error fetching trips:", error);

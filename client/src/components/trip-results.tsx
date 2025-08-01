@@ -29,6 +29,20 @@ export default function TripResults() {
   const { data, error, isError, isLoading: queryLoading } = useQuery<NSApiResponse>({
     queryKey: ["/api/trips", searchParams?.fromStation, searchParams?.toStation, searchParams?.dateTime],
     enabled: !!searchParams,
+    select: (rawData) => {
+      console.log("Raw API data received:", rawData);
+      try {
+        // Try to validate the data with schema
+        const validatedData = NSApiResponseSchema.parse(rawData);
+        console.log("Schema validation successful:", validatedData);
+        return validatedData;
+      } catch (validationError) {
+        console.error("Schema validation failed:", validationError);
+        console.log("Raw data that failed validation:", JSON.stringify(rawData, null, 2));
+        // Return the raw data anyway for debugging
+        return rawData as NSApiResponse;
+      }
+    },
     meta: {
       onSettled: () => setIsLoading(false),
     },
@@ -67,12 +81,28 @@ export default function TripResults() {
   if (isError) {
     return (
       <Card className="bg-red-50 border border-red-200 rounded-lg">
-        <CardContent className="p-6 text-center">
-          <AlertCircle className="text-red-500 text-3xl mb-4 mx-auto w-12 h-12" />
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Failed to load trips</h3>
-          <p className="text-red-600 mb-4">
-            {error instanceof Error ? error.message : "An unexpected error occurred while fetching trip data."}
-          </p>
+        <CardContent className="p-6">
+          <div className="text-center mb-4">
+            <AlertCircle className="text-red-500 text-3xl mb-4 mx-auto w-12 h-12" />
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Failed to load trips</h3>
+            <p className="text-red-600 mb-4">
+              {error instanceof Error ? error.message : "An unexpected error occurred while fetching trip data."}
+            </p>
+          </div>
+          {/* Full API Debug Information */}
+          <div className="p-4 bg-gray-100 rounded-lg text-left text-sm">
+            <h4 className="font-bold mb-2">Full API Debug Info:</h4>
+            <div className="space-y-2">
+              <p><strong>Search Params:</strong></p>
+              <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
+              <p><strong>Error Object:</strong></p>
+              <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
+              <p><strong>Raw Data:</strong></p>
+              <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(data, null, 2)}</pre>
+              <p><strong>Query Key:</strong></p>
+              <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(["/api/trips", searchParams?.fromStation, searchParams?.toStation, searchParams?.dateTime], null, 2)}</pre>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -130,11 +160,17 @@ export default function TripResults() {
 
       {/* Debug information */}
       <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
-        <h4 className="font-bold mb-2">Debug Info:</h4>
-        <p><strong>Search Params:</strong> {JSON.stringify(searchParams, null, 2)}</p>
-        <p><strong>Data:</strong> {data ? `${data.trips?.length || 0} trips found` : "No data"}</p>
-        <p><strong>API Response:</strong> {data ? JSON.stringify(data, null, 2).substring(0, 500) + "..." : "None"}</p>
-        <p><strong>Error:</strong> {error ? String(error) : "None"}</p>
+        <h4 className="font-bold mb-2">Full API Debug Info:</h4>
+        <div className="space-y-2">
+          <p><strong>Search Params:</strong></p>
+          <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
+          <p><strong>Data (${data?.trips?.length || 0} trips):</strong></p>
+          <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
+          <p><strong>Error:</strong></p>
+          <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
+          <p><strong>Query State:</strong></p>
+          <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify({isError, queryLoading, isLoading}, null, 2)}</pre>
+        </div>
       </div>
 
       {data?.trips?.map((trip, index) => (
