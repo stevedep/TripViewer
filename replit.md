@@ -1,6 +1,15 @@
 # Overview
 
-This is a full-stack web application that provides a trip planning interface for the Netherlands railway system (NS). The application allows users to search for train routes between stations and displays detailed trip information including transfers, delays, and real-time status updates. It integrates with the NS API to fetch live train schedule data and presents it through a modern, responsive user interface.
+This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
+
+**Current Status**: Converted from full-stack to static website deployment (August 1, 2025)
+
+Key features:
+- Real-time trip search with flexible datetime selection
+- Advanced trip result display with dynamic loading
+- Comprehensive NS transportation data integration
+- Responsive and user-friendly trip information interface
+- **Static deployment ready** - no server-side components required
 
 # User Preferences
 
@@ -15,10 +24,14 @@ State management is handled through React Query (TanStack Query) for server stat
 
 Form handling is implemented using React Hook Form with Zod for validation, ensuring type-safe form processing and robust error handling.
 
-## Backend Architecture
-The server is built with Express.js using TypeScript and follows a RESTful API design. The main entry point sets up middleware for JSON parsing, request logging, and error handling. The server architecture is modular with separate route handling and utilities.
+## Static Website Architecture (Current)
+The application now operates as a static website with all API calls made directly from the frontend. The previous Express.js backend has been replaced with frontend-only services that interact directly with the NS API.
 
-The application uses a proxy pattern to interact with the NS (Nederlandse Spoorwegen) API, handling authentication and request formatting while providing a simplified interface to the frontend.
+**Key Changes Made (August 1, 2025):**
+- Removed server-side proxy pattern
+- Created `client/src/lib/nsApi.ts` for direct NS API integration
+- Updated query client to use frontend services instead of backend routes
+- Built static deployment configuration with proper file structure
 
 ## Data Storage Solutions
 The application currently uses in-memory storage for user data through a custom storage interface that could be easily swapped for a database implementation. Drizzle ORM is configured for PostgreSQL integration, indicating plans for persistent data storage.
@@ -29,9 +42,18 @@ Session management is implemented using connect-pg-simple for PostgreSQL-backed 
 The codebase includes basic user management structures with interfaces for user creation and retrieval. The storage layer supports user authentication patterns, though the current implementation appears to be simplified for development purposes.
 
 ## External Service Integrations
-The primary external integration is with the NS (Nederlandse Spoorwegen) API for real-time train schedule data. The application handles API authentication using subscription keys and formats requests according to NS API specifications.
+The primary external integration is with the NS (Nederlandse Spoorwegen) API for real-time train schedule data. The application now makes direct calls from the frontend using CORS-enabled requests.
 
-The integration includes comprehensive error handling and request formatting, ensuring reliable data fetching from the Dutch railway system's official API endpoints.
+**Static Deployment Integration:**
+- Direct frontend calls to `gateway.apiportal.ns.nl`
+- Proper headers and API key configuration
+- CORS error handling with user-friendly fallbacks
+- Schema validation using Zod for API response validation
+
+**Build Process:**
+- Created `build-static.js` for static deployment preparation
+- Moves files from `dist/public/` to `dist/` root for proper static hosting
+- Removes server-side components during build process
 
 # External Dependencies
 

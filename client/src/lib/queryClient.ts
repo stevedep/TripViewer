@@ -1,11 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-
-async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-}
+import { searchTrips, getTrainDetails, getPopularStations } from "./nsApi";
 
 export async function apiRequest(
   method: string,
@@ -16,10 +10,13 @@ export async function apiRequest(
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
 
-  await throwIfResNotOk(res);
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
+  }
+  
   return res;
 }
 
@@ -29,32 +26,36 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    let url: string;
+    console.log("QueryClient: Processing query key:", queryKey);
     
-    // Handle trips endpoint with query parameters
+    // Handle different API endpoints using frontend services
     if (queryKey[0] === "/api/trips" && queryKey.length > 1) {
-      const [endpoint, fromStation, toStation, dateTime] = queryKey;
-      url = `${endpoint}?fromStation=${encodeURIComponent(fromStation as string)}&toStation=${encodeURIComponent(toStation as string)}&dateTime=${encodeURIComponent(dateTime as string)}`;
-    } else {
-      url = queryKey.join("/") as string;
+      const [, fromStation, toStation, dateTime] = queryKey;
+      return await searchTrips({
+        fromStation: fromStation as string,
+        toStation: toStation as string,
+        dateTime: dateTime as string,
+      });
     }
     
-    console.log("QueryClient: Making request to:", url);
-    
-    const res = await fetch(url, {
-      credentials: "include",
-    });
-
-    console.log("QueryClient: Response status:", res.status, res.statusText);
-
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (queryKey[0] === "/api/stations") {
+      return getPopularStations();
     }
-
-    await throwIfResNotOk(res);
-    const data = await res.json();
-    console.log("QueryClient: Response data:", JSON.stringify(data, null, 2).substring(0, 500) + "...");
-    return data;
+    
+    if (queryKey[0] === "/api/train" && queryKey.length >= 3) {
+      const [, trainNumber, stationCode] = queryKey;
+      const urlParams = new URLSearchParams(window.location.search);
+      const dateTime = urlParams.get('dateTime') || new Date().toISOString();
+      
+      return await getTrainDetails(
+        trainNumber as string,
+        stationCode as string,
+        dateTime
+      );
+    }
+    
+    // Fallback for any other requests (shouldn't happen in static mode)
+    throw new Error(`Unsupported query key: ${queryKey.join("/")}`);
   };
 
 export const queryClient = new QueryClient({
