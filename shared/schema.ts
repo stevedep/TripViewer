@@ -193,10 +193,10 @@ export const TripSchema = z.object({
   realtime: z.boolean().optional(),
   routeId: z.string().optional(),
   registerJourney: z.object({
-    url: z.string(),
-    searchUrl: z.string(),
-    status: z.string(),
-    bicycleReservationRequired: z.boolean(),
+    url: z.string().optional(),
+    searchUrl: z.string().optional(),
+    status: z.string().optional(),
+    bicycleReservationRequired: z.boolean().optional(),
   }).optional(),
   modalityListItems: z.array(z.any()).optional(),
 });
