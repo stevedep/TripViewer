@@ -10,6 +10,8 @@ export default function TripResults() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [transferFilter, setTransferFilter] = useState<number | null>(null);
+  const [additionalTrips, setAdditionalTrips] = useState<NSApiResponse["trips"]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Listen for search events
   useEffect(() => {
@@ -17,6 +19,9 @@ export default function TripResults() {
       console.log("TripResults received search event:", event.detail);
       setSearchParams(event.detail);
       setIsLoading(true);
+      // Reset additional trips and filter when new search is performed
+      setAdditionalTrips([]);
+      setTransferFilter(null);
     };
 
     console.log("TripResults: Adding event listener for tripSearch");
@@ -132,15 +137,51 @@ export default function TripResults() {
     );
   }
 
+  // Combine original trips with additional trips
+  const allTrips = data && data.trips ? [...data.trips, ...additionalTrips] : [];
+
+  // Function to load more trips using the last trip's arrival time
+  const loadMoreTrips = async () => {
+    if (!data?.trips || data.trips.length === 0 || !searchParams) return;
+    
+    setLoadingMore(true);
+    try {
+      // Get the last trip's arrival time
+      const lastTrip = allTrips[allTrips.length - 1];
+      const lastArrivalTime = lastTrip.legs[lastTrip.legs.length - 1].destination.actualDateTime || 
+                             lastTrip.legs[lastTrip.legs.length - 1].destination.plannedDateTime;
+      
+      // Format the datetime for the next search
+      const nextSearchTime = new Date(lastArrivalTime);
+      nextSearchTime.setMinutes(nextSearchTime.getMinutes() + 1); // Start 1 minute after last arrival
+      
+      const formattedNextTime = nextSearchTime.toISOString().slice(0, 16);
+      
+      // Make API call for more trips
+      const response = await fetch(`/api/trips?fromStation=${encodeURIComponent(searchParams.fromStation)}&toStation=${encodeURIComponent(searchParams.toStation)}&dateTime=${encodeURIComponent(formattedNextTime)}`);
+      
+      if (response.ok) {
+        const moreTripsData = await response.json();
+        if (moreTripsData.trips && moreTripsData.trips.length > 0) {
+          setAdditionalTrips(prev => [...prev, ...moreTripsData.trips]);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading more trips:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   // Show results if we have data, regardless of error state
   if (data && data.trips && data.trips.length > 0) {
     // Filter trips based on transfer filter
     const filteredTrips = transferFilter !== null 
-      ? data.trips.filter(trip => trip.transfers === transferFilter)
-      : data.trips;
+      ? allTrips.filter(trip => trip.transfers === transferFilter)
+      : allTrips;
 
     // Get unique transfer counts for filter options
-    const transferCounts = [...new Set(data.trips.map(trip => trip.transfers))].sort((a, b) => a - b);
+    const transferCounts = [...new Set(allTrips.map(trip => trip.transfers))].sort((a, b) => a - b);
 
     return (
       <div className="space-y-4">
@@ -151,9 +192,14 @@ export default function TripResults() {
           </h2>
           <div className="text-sm text-gray-600">
             {transferFilter !== null 
-              ? `${filteredTrips.length} of ${data?.trips?.length || 0} trips (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})`
-              : `${data?.trips?.length || 0} trips found`
+              ? `${filteredTrips.length} of ${allTrips.length} trips (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})`
+              : `${allTrips.length} trips found`
             }
+            {additionalTrips.length > 0 && (
+              <span className="ml-2 text-ns-blue">
+                (includes {additionalTrips.length} additional)
+              </span>
+            )}
           </div>
         </div>
 
@@ -169,7 +215,7 @@ export default function TripResults() {
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
               }`}
             >
-              All ({data.trips.length})
+              All ({allTrips.length})
             </button>
             {transferCounts.map(count => (
               <button
@@ -181,9 +227,27 @@ export default function TripResults() {
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
                 }`}
               >
-                {count} transfer{count !== 1 ? 's' : ''} ({data.trips.filter(trip => trip.transfers === count).length})
+                {count} transfer{count !== 1 ? 's' : ''} ({allTrips.filter(trip => trip.transfers === count).length})
               </button>
             ))}
+          </div>
+          
+          {/* Load More Trips Button */}
+          <div className="mt-3 flex justify-center">
+            <button
+              onClick={loadMoreTrips}
+              disabled={loadingMore}
+              className="px-4 py-2 bg-ns-orange text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {loadingMore ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Loading more trips...</span>
+                </>
+              ) : (
+                <span>Load More Trips</span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -201,8 +265,10 @@ export default function TripResults() {
               <div className="space-y-2">
                 <p><strong>Search Params:</strong></p>
                 <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
-                <p><strong>Data (${data?.trips?.length || 0} trips):</strong></p>
+                <p><strong>Original Data (${data?.trips?.length || 0} trips):</strong></p>
                 <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
+                <p><strong>Additional Trips (${additionalTrips.length} trips):</strong></p>
+                <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(additionalTrips, null, 2)}</pre>
                 <p><strong>Error:</strong></p>
                 <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
                 <p><strong>Query State:</strong></p>
