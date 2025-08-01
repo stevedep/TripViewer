@@ -214,6 +214,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           
           const data = await response.json();
 
+          // Log the full structure to understand seat data format
+          console.log("Full Virtual Train API Response Structure:", JSON.stringify(data, null, 2));
+
           // Store API call details
           apiCalls.push({
             url: virtualTrainUrl,
