@@ -116,6 +116,49 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     }).filter(code => code && code.trim()).join(" → ");
   };
 
+  // Calculate waiting time between legs in minutes
+  const getWaitingTime = (currentLegIndex: number): number => {
+    if (currentLegIndex === 0) return 0; // No waiting for first leg
+    
+    const currentLeg = trip.legs[currentLegIndex];
+    const previousLeg = trip.legs[currentLegIndex - 1];
+    
+    if (!currentLeg || !previousLeg) return 0;
+    
+    const arrivalTime = new Date(previousLeg.destination.actualDateTime || previousLeg.destination.plannedDateTime);
+    const departureTime = new Date(currentLeg.origin.actualDateTime || currentLeg.origin.plannedDateTime);
+    
+    const waitingMs = departureTime.getTime() - arrivalTime.getTime();
+    return Math.max(0, Math.round(waitingMs / (1000 * 60))); // Convert to minutes, minimum 0
+  };
+
+  // Generate detailed header structure: x transfers - [station] - (waiting : platform) - material - [station] etc
+  const getDetailedHeader = () => {
+    const parts: string[] = [];
+    
+    // Add transfer count
+    parts.push(`${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`);
+    
+    // Process each leg
+    trip.legs.forEach((leg, index) => {
+      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+      const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+      const waitingTime = getWaitingTime(index);
+      const platform = leg.origin.actualTrack || leg.origin.plannedTrack || "?";
+      
+      // Add station code where you get on the train
+      parts.push(`[${leg.origin.stationCode || leg.origin.name}]`);
+      
+      // Add waiting time and platform
+      parts.push(`(${waitingTime} min : platform ${platform})`);
+      
+      // Add material/train type
+      parts.push(trainType);
+    });
+    
+    return parts.join(' - ');
+  };
+
   // Fetch train details for each leg to get the actual train type
   useEffect(() => {
     const fetchTrainDetails = async () => {
@@ -225,13 +268,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               {statusInfo.icon}
               <span>{statusInfo.text}</span>
             </div>
-            <div className="text-gray-600 text-sm">
-              {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''}
-              {getLegCategoryCodes() && (
-                <span className="ml-2 text-ns-blue font-medium">
-                  • {getLegCategoryCodes()}
-                </span>
-              )}
+            <div className="text-gray-600 text-sm max-w-2xl">
+              {getDetailedHeader()}
             </div>
           </div>
           <div className="text-right">

@@ -2,7 +2,7 @@
 
 This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
 
-**Current Status**: Fully functional material type filtering system with static website deployment - NS API key configured for production deployment (August 1, 2025)
+**Current Status**: Fully functional material type filtering system with static website deployment and comprehensive delay information display - NS API key configured for production deployment (August 1, 2025)
 
 Key features:
 - Real-time trip search with flexible datetime selection
@@ -11,6 +11,8 @@ Key features:
 - **Material type filtering** - filter trips by exact train types (IC, ICD, ICNG, VIRM, DDZ, Flirt, SNG, SPR)
 - **Transfer filtering** - filter by number of transfers (0, 2, 3+)
 - **Combined filtering** - use both transfer and material type filters simultaneously
+- **Delay information display** - shows exact delay minutes in red text (+X min) for delayed trains
+- **Detailed trip headers** - format: "x transfers - [station code] - (waiting minutes : platform) - material code" 
 - Responsive and user-friendly trip information interface
 - **Static deployment ready** - no server-side components required
 
