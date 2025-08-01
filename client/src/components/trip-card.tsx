@@ -404,7 +404,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       {/* Trip Legs Details */}
       {showDetails && (
         <CardContent className="p-6">
-          <LegDetails legs={trip.legs} originalDestination={lastLeg.destination.name} />
+          <LegDetails 
+          legs={trip.legs} 
+          originalDestination={lastLeg.destination.name}
+          legSeatingData={legSeatingData}
+          legTrainTypes={legTrainTypes}
+        />
           
           {/* API Call Details Section */}
           <div className="mt-6 border-t pt-4">
