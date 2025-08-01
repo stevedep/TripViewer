@@ -67,6 +67,11 @@ export default function TripCard({ trip }: TripCardProps) {
     return "bg-ns-blue";
   };
 
+  // Get leg names for display
+  const getLegNames = () => {
+    return trip.legs.map(leg => leg.name).filter(name => name && name.trim()).join(" → ");
+  };
+
   return (
     <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
       {/* Trip Header */}
@@ -79,6 +84,11 @@ export default function TripCard({ trip }: TripCardProps) {
             </div>
             <div className="text-gray-600 text-sm">
               {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''}
+              {getLegNames() && (
+                <span className="ml-2 text-ns-blue font-medium">
+                  • {getLegNames()}
+                </span>
+              )}
             </div>
           </div>
           <div className="text-right">
