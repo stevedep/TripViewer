@@ -58,8 +58,8 @@ export default function TripResults() {
     isLoading
   });
 
-  // Loading state
-  if (isLoading || queryLoading) {
+  // Loading state - only show loading if we're actually loading and don't have data yet
+  if ((isLoading || queryLoading) && !data) {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center space-x-2 text-ns-blue">
@@ -130,6 +130,42 @@ export default function TripResults() {
     );
   }
 
+  // Show results if we have data, regardless of error state
+  if (data && data.trips && data.trips.length > 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+            <List className="text-ns-blue mr-3" />
+            Available Trips
+          </h2>
+          <div className="text-sm text-gray-600">
+            {data?.trips?.length || 0} trips found
+          </div>
+        </div>
+
+        {/* Debug information */}
+        <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
+          <h4 className="font-bold mb-2">Full API Debug Info:</h4>
+          <div className="space-y-2">
+            <p><strong>Search Params:</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
+            <p><strong>Data (${data?.trips?.length || 0} trips):</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
+            <p><strong>Error:</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
+            <p><strong>Query State:</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify({isError, queryLoading, isLoading}, null, 2)}</pre>
+          </div>
+        </div>
+
+        {data?.trips?.map((trip, index) => (
+          <TripCard key={trip.uid || index} trip={trip} />
+        ))}
+      </div>
+    );
+  }
+
   // No trips found
   if (data && (!data.trips || data.trips.length === 0)) {
     return (
@@ -145,37 +181,30 @@ export default function TripResults() {
     );
   }
 
-  // Display results
+  // Fallback - this should not be reached if we have proper data handling above
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-          <List className="text-ns-blue mr-3" />
-          Available Trips
-        </h2>
-        <div className="text-sm text-gray-600">
-          {data?.trips?.length || 0} trips found
+    <Card className="bg-yellow-50 border border-yellow-200 rounded-lg">
+      <CardContent className="p-6 text-center">
+        <AlertCircle className="text-yellow-500 text-3xl mb-4 mx-auto w-12 h-12" />
+        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Unexpected State</h3>
+        <p className="text-yellow-600 mb-4">
+          The application is in an unexpected state. Debug information below:
+        </p>
+        {/* Debug information */}
+        <div className="p-4 bg-gray-100 rounded-lg text-left text-sm">
+          <h4 className="font-bold mb-2">Debug Info:</h4>
+          <div className="space-y-2">
+            <p><strong>Search Params:</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
+            <p><strong>Data:</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
+            <p><strong>Error:</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
+            <p><strong>State:</strong></p>
+            <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify({isError, queryLoading, isLoading}, null, 2)}</pre>
+          </div>
         </div>
-      </div>
-
-      {/* Debug information */}
-      <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
-        <h4 className="font-bold mb-2">Full API Debug Info:</h4>
-        <div className="space-y-2">
-          <p><strong>Search Params:</strong></p>
-          <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(searchParams, null, 2)}</pre>
-          <p><strong>Data (${data?.trips?.length || 0} trips):</strong></p>
-          <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(data, null, 2)}</pre>
-          <p><strong>Error:</strong></p>
-          <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify(error, null, 2)}</pre>
-          <p><strong>Query State:</strong></p>
-          <pre className="bg-white p-2 rounded text-xs overflow-auto">{JSON.stringify({isError, queryLoading, isLoading}, null, 2)}</pre>
-        </div>
-      </div>
-
-      {data?.trips?.map((trip, index) => (
-        <TripCard key={trip.uid || index} trip={trip} />
-      ))}
-    </div>
+      </CardContent>
+    </Card>
   );
 }

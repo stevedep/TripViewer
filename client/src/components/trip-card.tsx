@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CheckCircle, Clock, AlertTriangle, Train, ArrowRight, Ticket } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import LegDetails from "@/components/leg-details";
+import LegDetails from "./leg-details";
 import { type Trip } from "@shared/schema";
 
 interface TripCardProps {
