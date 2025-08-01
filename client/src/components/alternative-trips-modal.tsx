@@ -26,8 +26,6 @@ export default function AlternativeTripsModal({
   const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: { first: number; second: number } }>({});
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
 
-  if (!isOpen) return null;
-
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/trips", fromStation, originalDestination, fromDateTime],
     queryFn: () => searchTrips({
@@ -116,6 +114,8 @@ export default function AlternativeTripsModal({
 
     fetchMaterialInfo();
   }, [data]);
+
+  if (!isOpen) return null;
 
   // Format time
   const formatTime = (dateTime: string) => {
