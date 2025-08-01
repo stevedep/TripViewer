@@ -170,9 +170,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       // Get seating information from Virtual Train API data
       const seatingData = legSeatingData[legKey];
       if (seatingData) {
-        materialParts.push(`${trainType} : ${seatingData.first} first class - ${seatingData.second} second class seats`);
+        materialParts.push(`${trainType} (${seatingData.first} : ${seatingData.second})`);
       } else {
-        materialParts.push(`${trainType} : ? first class - ? second class seats`);
+        materialParts.push(`${trainType} (? : ?)`);
       }
     });
     
