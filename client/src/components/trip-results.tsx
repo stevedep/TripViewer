@@ -200,8 +200,14 @@ export default function TripResults() {
       
       const formattedNextTime = nextSearchTime.toISOString().slice(0, 16);
       
-      // Make API call for more trips
-      const response = await fetch(`/api/trips?fromStation=${encodeURIComponent(searchParams.fromStation)}&toStation=${encodeURIComponent(searchParams.toStation)}&dateTime=${encodeURIComponent(formattedNextTime)}`);
+      // Make direct NS API call for more trips
+      const nsApiUrl = `https://gateway.apiportal.ns.nl/reisinformatie-api/api/v3/trips?fromStation=${encodeURIComponent(searchParams.fromStation)}&toStation=${encodeURIComponent(searchParams.toStation)}&dateTime=${encodeURIComponent(formattedNextTime)}&lang=nl&product=OVCHIPKAART_ENKELE_REIS&travelClass=2&firstMileModality=PUBLIC_TRANSPORT&lastMileModality=PUBLIC_TRANSPORT`;
+      
+      const response = await fetch(nsApiUrl, {
+        headers: {
+          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_NS_API_KEY || '',
+        }
+      });
       
       if (response.ok) {
         const moreTripsData = await response.json();
@@ -211,6 +217,8 @@ export default function TripResults() {
           const uniqueTrips = removeDuplicates(combinedTrips);
           setAllTrips(uniqueTrips);
         }
+      } else {
+        console.error('Failed to load more trips:', response.status, response.statusText);
       }
     } catch (error) {
       console.error("Error loading more trips:", error);
