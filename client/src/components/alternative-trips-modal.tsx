@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { X, Clock, Train } from "lucide-react";
+import { X, Clock, Train, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { searchTrips } from "@/lib/nsApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { type Trip } from "@shared/schema";
+import LegDetails from "./leg-details";
 
 interface AlternativeTripsModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export default function AlternativeTripsModal({
 }: AlternativeTripsModalProps) {
   const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: { first: number; second: number } }>({});
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
+  const [expandedTrips, setExpandedTrips] = useState<Set<string>>(new Set());
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/trips", fromStation, originalDestination, fromDateTime],
@@ -164,6 +166,17 @@ export default function AlternativeTripsModal({
     return `+${hours}:${minutes.toString().padStart(2, '0')}`;
   };
 
+  // Toggle trip expansion
+  const toggleTripExpansion = (tripUid: string) => {
+    const newExpanded = new Set(expandedTrips);
+    if (newExpanded.has(tripUid)) {
+      newExpanded.delete(tripUid);
+    } else {
+      newExpanded.add(tripUid);
+    }
+    setExpandedTrips(newExpanded);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden">
@@ -201,11 +214,16 @@ export default function AlternativeTripsModal({
                 const firstLeg = trip.legs[0];
                 const lastLeg = trip.legs[trip.legs.length - 1];
                 
+                const isExpanded = expandedTrips.has(trip.uid);
+                
                 return (
                   <Card key={trip.uid} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-3 sm:p-4">
-                      {/* Mobile-first layout: Stack on small screens, side-by-side on larger */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                      {/* Clickable header - Mobile-first layout */}
+                      <div 
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 cursor-pointer"
+                        onClick={() => toggleTripExpansion(trip.uid)}
+                      >
                         
                         {/* Times and journey line */}
                         <div className="flex items-center space-x-3 sm:space-x-6 flex-1">
@@ -269,16 +287,27 @@ export default function AlternativeTripsModal({
                           </div>
                         </div>
 
-                        {/* Duration - separate row on mobile */}
-                        <div className="text-center sm:text-right flex-shrink-0">
-                          <div className="text-base sm:text-lg font-bold text-gray-800">
-                            {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
+                        {/* Duration and expand button */}
+                        <div className="flex items-center justify-between sm:justify-end gap-3">
+                          <div className="text-center sm:text-right flex-shrink-0">
+                            <div className="text-base sm:text-lg font-bold text-gray-800">
+                              {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
+                            </div>
+                            <div className="text-xs text-gray-600">Total journey</div>
                           </div>
-                          <div className="text-xs text-gray-600">Total journey</div>
+                          
+                          {/* Expand/Collapse Icon */}
+                          <div className="text-gray-400 flex-shrink-0">
+                            {isExpanded ? (
+                              <ChevronUp className="w-5 h-5" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5" />
+                            )}
+                          </div>
                         </div>
                       </div>
                       
-                      {/* Material Information - Full width on mobile */}
+                      {/* Material Information - Always visible but compact */}
                       <div className="mt-3 space-y-2">
                         {trip.legs.map((leg, legIndex) => {
                           const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
@@ -320,6 +349,17 @@ export default function AlternativeTripsModal({
                           );
                         })}
                       </div>
+
+                      {/* Expanded Details - Hidden by default */}
+                      {isExpanded && (
+                        <div className="mt-4 border-t border-gray-200 pt-4">
+                          <div className="text-sm font-medium text-gray-700 mb-3">Journey Details</div>
+                          <LegDetails 
+                            trip={trip} 
+                            originalDestination={originalDestination}
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
