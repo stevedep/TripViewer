@@ -1,7 +1,7 @@
 import { TripSearchSchema } from "@shared/schema";
 
 const NS_API_BASE = "https://gateway.apiportal.ns.nl";
-const API_KEY = "1ea3dd385baf4127a20cb8fb38af634d"; // Public API key for demo purposes
+const API_KEY = import.meta.env.VITE_NS_API_KEY || "590c1627b27c414baffb2737e241f16f";
 
 // Create headers for NS API requests
 function createHeaders(): HeadersInit {
@@ -147,7 +147,7 @@ export async function searchStations(query: string): Promise<any[]> {
 
     const data = await response.json();
     
-    // Extract locations from all place types (stations, POI, addresses, etc.)
+    // Extract locations from all place types, prioritizing actual transit stations
     const allPlaces = data.payload || [];
     const allLocations = allPlaces.flatMap((place: any) => {
       // For places with locations array (like stations)
@@ -155,7 +155,8 @@ export async function searchStations(query: string): Promise<any[]> {
         return place.locations.map((location: any) => ({
           name: location.name,
           stationCode: location.stationCode,
-          type: place.type
+          type: place.type,
+          priority: place.type === 'stationV2' ? 1 : 2 // Prioritize actual stations
         }));
       }
       
@@ -164,14 +165,19 @@ export async function searchStations(query: string): Promise<any[]> {
         return [{
           name: place.name,
           stationCode: place.stationCode || null,
-          type: place.type
+          type: place.type,
+          priority: place.type === 'stationV2' ? 1 : 3 // Lower priority for POI
         }];
       }
       
       return [];
     });
     
-    return allLocations;
+    // Sort by priority (stations first) then by name
+    return allLocations.sort((a: any, b: any) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return a.name.localeCompare(b.name);
+    });
   } catch (error) {
     console.warn(`Error searching stations for "${query}":`, error);
     return [];
