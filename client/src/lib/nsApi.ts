@@ -144,13 +144,16 @@ export async function searchStations(query: string): Promise<any[]> {
     );
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      console.warn(`NS Autosuggest API error: ${response.status} ${response.statusText}`);
+      // Return empty array if API fails, fallback to popular stations will be used
+      return [];
     }
 
     const data = await response.json();
     return data || [];
   } catch (error) {
     console.warn(`Error searching stations for "${query}":`, error);
+    // Return empty array if API fails, fallback to popular stations will be used
     return [];
   }
 }

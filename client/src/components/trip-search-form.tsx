@@ -44,10 +44,21 @@ function StationSearchDropdown({
         setIsLoading(true);
         try {
           const results = await searchStations(searchQuery);
-          setSuggestions(results);
+          // If NS API fails, filter popular stations instead
+          if (results.length === 0) {
+            const filteredPopular = popularStations
+              .filter(station => station.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map(name => ({ naam: name }));
+            setSuggestions(filteredPopular);
+          } else {
+            setSuggestions(results);
+          }
         } catch (error) {
-          console.warn("Failed to search stations:", error);
-          setSuggestions([]);
+          // Fallback to filtering popular stations
+          const filteredPopular = popularStations
+            .filter(station => station.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map(name => ({ naam: name }));
+          setSuggestions(filteredPopular);
         } finally {
           setIsLoading(false);
         }
@@ -57,7 +68,7 @@ function StationSearchDropdown({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, popularStations]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -105,11 +116,11 @@ function StationSearchDropdown({
           )}
           
           {!isLoading && displaySuggestions.length === 0 && searchQuery.length >= 2 && (
-            <div className="px-3 py-2 text-sm text-gray-500">No stations found</div>
+            <div className="px-3 py-2 text-sm text-gray-500">No matching stations found</div>
           )}
           
           {!isLoading && displaySuggestions.length === 0 && searchQuery.length < 2 && (
-            <div className="px-3 py-2 text-sm text-gray-500">Type to search stations...</div>
+            <div className="px-3 py-2 text-sm text-gray-500">Type to search popular stations...</div>
           )}
           
           {!isLoading && displaySuggestions.map((station, index) => (
