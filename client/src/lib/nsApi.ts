@@ -122,20 +122,17 @@ export function getPopularStations(): string[] {
   ];
 }
 
-// Station autocomplete API
+// Station autocomplete API using NS Places API
 export async function searchStations(query: string): Promise<any[]> {
   if (!query || query.length < 2) return [];
   
   try {
     const response = await fetch(
-      `https://gateway.apiportal.ns.nl/autosuggest-api/locaties?q=${encodeURIComponent(query)}`,
+      `https://gateway.apiportal.ns.nl/places-api/v2/places?q=${encodeURIComponent(query)}`,
       {
         headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'nl',
-          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_NS_API_KEY || '',
-          'X-Caller-Id': 'NS Web',
-          'X-Caller-Version': 'rp-planbar-20250618.14',
+          'Accept': 'application/json',
+          'Ocp-Apim-Subscription-Key': '590c1627b27c414baffb2737e241f16f',
         },
         method: 'GET',
         mode: 'cors',
@@ -144,16 +141,14 @@ export async function searchStations(query: string): Promise<any[]> {
     );
 
     if (!response.ok) {
-      console.warn(`NS Autosuggest API error: ${response.status} ${response.statusText}`);
-      // Return empty array if API fails, fallback to popular stations will be used
+      console.warn(`NS Places API error: ${response.status} ${response.statusText}`);
       return [];
     }
 
     const data = await response.json();
-    return data || [];
+    return data.payload || [];
   } catch (error) {
     console.warn(`Error searching stations for "${query}":`, error);
-    // Return empty array if API fails, fallback to popular stations will be used
     return [];
   }
 }

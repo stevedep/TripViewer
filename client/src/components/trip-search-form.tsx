@@ -127,11 +127,14 @@ function StationSearchDropdown({
             <div
               key={index}
               className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm border-b border-gray-100 last:border-b-0"
-              onClick={() => handleSelectStation(station.naam)}
+              onClick={() => handleSelectStation(station.naam || station.name)}
             >
-              <div className="font-medium">{station.naam}</div>
+              <div className="font-medium">{station.naam || station.name}</div>
               {station.land && (
                 <div className="text-xs text-gray-500">{station.land}</div>
+              )}
+              {station.type && (
+                <div className="text-xs text-gray-400">{station.type}</div>
               )}
             </div>
           ))}
