@@ -70,17 +70,24 @@ export async function searchTrips(params: {
   }
   
   // Add exclusions for specific transport types
+  // Note: Each exclusion needs to be added separately as multiple parameters
   if (searchParams.excludeBus) {
-    apiUrl.searchParams.set("excludeTransportType", "BUS");
+    apiUrl.searchParams.append("excludeTransportType", "BUS");
   }
   if (searchParams.excludeTram) {
-    apiUrl.searchParams.set("excludeTransportType", "TRAM");
+    apiUrl.searchParams.append("excludeTransportType", "TRAM");
   }
   if (searchParams.excludeMetro) {
-    apiUrl.searchParams.set("excludeTransportType", "METRO");
+    apiUrl.searchParams.append("excludeTransportType", "METRO");
   }
 
-  console.log("Making direct NS API request:", apiUrl.toString());
+  console.log("Making direct NS API request with travel options:", {
+    url: apiUrl.toString(),
+    excludeBus: searchParams.excludeBus,
+    excludeTram: searchParams.excludeTram,
+    excludeMetro: searchParams.excludeMetro,
+    walkingOnly: searchParams.walkingOnly
+  });
 
   try {
     const response = await fetch(apiUrl.toString(), {
