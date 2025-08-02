@@ -18,6 +18,17 @@ export default function TripHeader({ trip, legTrainTypes, legSeatingData }: Trip
       const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
       const seatingData = legSeatingData[legKey];
       
+      // Debug logging for trip header
+      console.log('TripHeader - checking leg:', {
+        legKey,
+        trainType,
+        seatingData,
+        productNumber: leg.product.number,
+        destinationCode: leg.destination.stationCode,
+        availableTrainTypes: Object.keys(legTrainTypes),
+        availableSeatingData: Object.keys(legSeatingData)
+      });
+      
       if (trainType && seatingData && trainType !== "undefined") {
         materialParts.push(
           `${trainType} (${seatingData.first} : ${seatingData.second})`

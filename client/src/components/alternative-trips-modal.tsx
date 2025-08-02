@@ -44,12 +44,12 @@ export default function AlternativeTripsModal({
 
     const fetchMaterialInfo = async () => {
       const promises = data.trips.slice(0, 5).flatMap((trip: Trip) =>
-        trip.legs.map(async (leg) => {
+        trip.legs.filter(leg => leg.travelType === 'PUBLIC_TRANSPORT').map(async (leg) => {
           const trainNumber = leg.product.number;
           const destinationStationCode = leg.destination.stationCode;
           const dateTime = leg.origin.plannedDateTime;
           
-          if (!trainNumber || !destinationStationCode) return null;
+          if (!trainNumber || !destinationStationCode || trainNumber === 'Unknown') return null;
 
           try {
             // For static deployment, make direct call to NS Virtual Train API with seating features
