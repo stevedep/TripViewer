@@ -5,7 +5,7 @@ import { searchTrips } from "@/lib/nsApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { type Trip } from "@shared/schema";
-import TripHeader from "./trip-header";
+import LegDetails from "./leg-details";
 
 interface AlternativeTripsModalProps {
   isOpen: boolean;
@@ -312,10 +312,12 @@ export default function AlternativeTripsModal({
                       {/* Expanded Details - Hidden by default */}
                       {isExpanded && (
                         <div className="mt-4 border-t border-gray-200 pt-4">
-                          <TripHeader 
-                            trip={trip}
+                          <LegDetails
+                            legs={trip.legs}
+                            originalDestination={trip.legs[trip.legs.length - 1].destination.name}
                             legSeatingData={legSeatingData}
                             legTrainTypes={legTrainTypes}
+                            legCarriageData={{}}
                           />
                         </div>
                       )}
