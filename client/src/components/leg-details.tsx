@@ -109,6 +109,16 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
     });
   };
 
+  // Format station name with final destination postfix
+  const formatStationWithDestination = (stationName: string, leg: Leg) => {
+    // Extract final destination from the leg direction
+    const finalDestination = leg.direction;
+    if (finalDestination && finalDestination !== stationName) {
+      return `${stationName} (${finalDestination})`;
+    }
+    return stationName;
+  };
+
   // Calculate stop duration
   const getStopDuration = (arrival?: string, departure?: string) => {
     if (!arrival || !departure) return "0 min stop";
@@ -187,7 +197,7 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                   className="font-semibold text-gray-800 cursor-pointer hover:text-ns-blue hover:underline"
                   onClick={() => handleStationClick(leg.origin.name, leg.origin.actualDateTime || leg.origin.plannedDateTime)}
                 >
-                  {leg.origin.name}
+                  {formatStationWithDestination(leg.origin.name, leg)}
                 </div>
                 <div className="text-sm text-gray-600">
                   Departure: {formatTime(leg.origin.actualDateTime || leg.origin.plannedDateTime)}
@@ -220,7 +230,7 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                   className="font-semibold text-gray-800 cursor-pointer hover:text-ns-blue hover:underline"
                   onClick={() => handleStationClick(leg.destination.name, leg.destination.actualDateTime || leg.destination.plannedDateTime)}
                 >
-                  {leg.destination.name}
+                  {formatStationWithDestination(leg.destination.name, leg)}
                 </div>
                 <div className="text-sm text-gray-600">
                   Arrival: {formatTime(leg.destination.actualDateTime || leg.destination.plannedDateTime)}
