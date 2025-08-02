@@ -195,25 +195,23 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       }
     });
     
-    // Line 3: Material/train info with seating
+    // Line 3: Material/train info with seating - only show if data is available
     const materialParts: string[] = [];
     trip.legs.forEach((leg, index) => {
       const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-      const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+      const trainType = legTrainTypes[legKey];
       
-      // Get seating information from Virtual Train API data
+      // Only add material info if we have both train type and seating data
       const seatingData = legSeatingData[legKey];
-      if (seatingData) {
+      if (trainType && seatingData && trainType !== 'undefined') {
         materialParts.push(`${trainType} (${seatingData.first} : ${seatingData.second})`);
-      } else {
-        materialParts.push(`${trainType} (? : ?)`);
       }
     });
     
     return {
       transferCount,
       transferDetails: transferParts,
-      materialInfo: materialParts.join(' - ')
+      materialInfo: materialParts.length > 0 ? materialParts.join(' - ') : null
     };
   };
 
@@ -377,7 +375,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                   <>
                     <div className="font-medium">{headerInfo.transferCount}</div>
                     <div className="space-y-1">{headerInfo.transferDetails}</div>
-                    <div className="text-ns-blue font-medium">{headerInfo.materialInfo}</div>
+                    {headerInfo.materialInfo && (
+                      <div className="text-ns-blue font-medium">{headerInfo.materialInfo}</div>
+                    )}
                   </>
                 );
               })()}
