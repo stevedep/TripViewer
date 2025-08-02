@@ -1,7 +1,8 @@
 import { TripSearchSchema } from "@shared/schema";
 
 const NS_API_BASE = "https://gateway.apiportal.ns.nl";
-const API_KEY = import.meta.env.VITE_NS_API_KEY || "590c1627b27c414baffb2737e241f16f";
+const PLACES_API_KEY = "590c1627b27c414baffb2737e241f16f"; // For Places API (search)
+const TRIPS_API_KEY = "1ea3dd385baf4127a20cb8fb38af634d"; // For Trips API (door-to-door planning)
 
 // Create headers for NS API requests
 function createHeaders(): HeadersInit {
@@ -9,7 +10,7 @@ function createHeaders(): HeadersInit {
     "accept": "application/json, text/plain, */*",
     "accept-language": "nl",
     "cache-control": "no-cache",
-    "ocp-apim-subscription-key": API_KEY,
+    "ocp-apim-subscription-key": TRIPS_API_KEY,
     "pragma": "no-cache",
     "x-caller-id": "NS Web",
     "x-caller-version": "rio-frontends-20250618.14",
@@ -26,10 +27,30 @@ export async function searchTrips(params: {
   // Validate parameters
   const searchParams = TripSearchSchema.parse(params);
 
+  // Check if we need to get coordinates for non-station locations
+  const fromLocation = await getLocationCoordinates(searchParams.fromStation);
+  const toLocation = await getLocationCoordinates(searchParams.toStation);
+
   // Build API URL
   const apiUrl = new URL(`${NS_API_BASE}/reisinformatie-api/api/v3/trips`);
-  apiUrl.searchParams.set("fromStation", searchParams.fromStation);
-  apiUrl.searchParams.set("toStation", searchParams.toStation);
+  
+  // Use coordinates for non-station locations, station names for actual stations
+  if (fromLocation && fromLocation.lat && fromLocation.lng) {
+    apiUrl.searchParams.set("originLat", fromLocation.lat.toString());
+    apiUrl.searchParams.set("originLng", fromLocation.lng.toString());
+    apiUrl.searchParams.set("originName", searchParams.fromStation);
+  } else {
+    apiUrl.searchParams.set("fromStation", searchParams.fromStation);
+  }
+  
+  if (toLocation && toLocation.lat && toLocation.lng) {
+    apiUrl.searchParams.set("destinationLat", toLocation.lat.toString());
+    apiUrl.searchParams.set("destinationLng", toLocation.lng.toString());
+    apiUrl.searchParams.set("destinationName", searchParams.toStation);
+  } else {
+    apiUrl.searchParams.set("toStation", searchParams.toStation);
+  }
+  
   apiUrl.searchParams.set("dateTime", searchParams.dateTime);
   apiUrl.searchParams.set("lang", "nl");
   apiUrl.searchParams.set("product", "OVCHIPKAART_ENKELE_REIS");
@@ -132,7 +153,7 @@ export async function searchStations(query: string): Promise<any[]> {
       {
         headers: {
           'Accept': 'application/json',
-          'Ocp-Apim-Subscription-Key': '590c1627b27c414baffb2737e241f16f',
+          'Ocp-Apim-Subscription-Key': PLACES_API_KEY,
         },
         method: 'GET',
         mode: 'cors',
@@ -155,6 +176,8 @@ export async function searchStations(query: string): Promise<any[]> {
         return place.locations.map((location: any) => ({
           name: location.name,
           stationCode: location.stationCode,
+          lat: location.lat,
+          lng: location.lng,
           type: place.type,
           priority: place.type === 'stationV2' ? 1 : 2 // Prioritize actual stations
         }));
@@ -165,6 +188,8 @@ export async function searchStations(query: string): Promise<any[]> {
         return [{
           name: place.name,
           stationCode: place.stationCode || null,
+          lat: place.lat,
+          lng: place.lng,
           type: place.type,
           priority: place.type === 'stationV2' ? 1 : 3 // Lower priority for POI
         }];
@@ -181,5 +206,47 @@ export async function searchStations(query: string): Promise<any[]> {
   } catch (error) {
     console.warn(`Error searching stations for "${query}":`, error);
     return [];
+  }
+}
+
+// Get coordinates for a location from the Places API
+async function getLocationCoordinates(locationName: string): Promise<{lat: number, lng: number} | null> {
+  try {
+    const response = await fetch(
+      `https://gateway.apiportal.ns.nl/places-api/v2/places?q=${encodeURIComponent(locationName)}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Ocp-Apim-Subscription-Key': PLACES_API_KEY,
+        },
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit'
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const places = data.payload || [];
+    
+    // Find exact match first
+    for (const place of places) {
+      if (place.locations) {
+        const location = place.locations.find((loc: any) => loc.name === locationName);
+        if (location && location.lat && location.lng) {
+          return { lat: location.lat, lng: location.lng };
+        }
+      }
+      // Check if the place itself matches and has coordinates
+      if (place.name === locationName && place.lat && place.lng) {
+        return { lat: place.lat, lng: place.lng };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn(`Error getting coordinates for "${locationName}":`, error);
+    return null;
   }
 }
