@@ -133,6 +133,9 @@ function StationSearchDropdown({
               {station.stationCode && (
                 <div className="text-xs text-gray-500">{station.stationCode}</div>
               )}
+              {station.type && station.type !== 'stationV2' && (
+                <div className="text-xs text-gray-400 capitalize">{station.type.toLowerCase().replace('_', ' ')}</div>
+              )}
             </div>
           ))}
         </div>
