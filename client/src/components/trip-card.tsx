@@ -170,11 +170,20 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           platformInfo = departurePlatform;
         }
         
-        transferParts.push(
-          <div key={`transfer-${index}`} className="text-sm">
-            [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{transferStation}</span>:{waitingTime}min{platformInfo ? `:${platformInfo}` : ""}]
-          </div>
-        );
+        // For walking segments, don't show transfer time
+        if (modalityType === "walking") {
+          transferParts.push(
+            <div key={`transfer-${index}`} className="text-sm">
+              [{legDurationMinutes}min][{modalityType}]
+            </div>
+          );
+        } else {
+          transferParts.push(
+            <div key={`transfer-${index}`} className="text-sm">
+              [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{transferStation}</span>:{waitingTime}min{platformInfo ? `:${platformInfo}` : ""}]
+            </div>
+          );
+        }
       } else {
         // First leg
         transferParts.push(
