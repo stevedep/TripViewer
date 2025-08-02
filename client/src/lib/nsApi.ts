@@ -88,13 +88,16 @@ export async function searchTrips(params: {
   }
 
   console.log("Making direct NS API request with travel options:", {
-    url: apiUrl.toString(),
+    fullUrl: apiUrl.toString(),
     excludeBus: searchParams.excludeBus,
     excludeTram: searchParams.excludeTram,
     excludeMetro: searchParams.excludeMetro,
     walkingOnly: searchParams.walkingOnly,
     disabledTransportModalities: disabledModalities.join(",")
   });
+  
+  // Log the exact URL parameters being sent
+  console.log("Full API URL being called:", apiUrl.toString());
 
   try {
     const response = await fetch(apiUrl.toString(), {
