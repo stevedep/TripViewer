@@ -5,6 +5,7 @@ import { searchTrips } from "@/lib/nsApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { type Trip } from "@shared/schema";
+import LegDetails from "./leg-details";
 
 interface AlternativeTripsModalProps {
   isOpen: boolean;
@@ -309,108 +310,12 @@ export default function AlternativeTripsModal({
                       {/* Expanded Details - Hidden by default */}
                       {isExpanded && (
                         <div className="mt-4 border-t border-gray-200 pt-4">
-                          {/* Trip Header */}
-                          <div className="text-sm text-gray-600 mb-3">
-                            {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''}
-                          </div>
-                          
-                          {/* Journey Steps */}
-                          <div className="space-y-2">
-                            {trip.legs.map((leg, legIndex) => {
-                              const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-                              const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
-                              
-                              // Calculate transfer time if not the first leg
-                              const transferTime = legIndex > 0 ? (() => {
-                                const prevLeg = trip.legs[legIndex - 1];
-                                const arrivalTime = new Date(prevLeg.destination.actualDateTime || prevLeg.destination.plannedDateTime);
-                                const departureTime = new Date(leg.origin.actualDateTime || leg.origin.plannedDateTime);
-                                const diffMinutes = Math.round((departureTime.getTime() - arrivalTime.getTime()) / (1000 * 60));
-                                return diffMinutes > 0 ? diffMinutes : 0;
-                              })() : null;
-                              
-                              return (
-                                <div key={legIndex}>
-                                  {/* Transfer time display */}
-                                  {transferTime !== null && transferTime > 0 && (
-                                    <div className="text-xs text-blue-600 font-medium mb-1">
-                                      ⏱ transfer: {transferTime}min{transferTime > 12 ? ` > ${transferTime}` : ''}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Journey step - exact format as main trip card */}
-                                  <div className="flex items-center justify-between text-sm py-1">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="font-medium text-gray-700 w-12">
-                                        {formatTime(leg.origin.actualDateTime || leg.origin.plannedDateTime)}
-                                      </span>
-                                      
-                                      {/* Transport icon and type */}
-                                      {leg.travelType === 'PUBLIC_TRANSPORT' ? (
-                                        <div className="flex items-center space-x-1">
-                                          <div className="w-4 h-4 bg-blue-600 rounded-sm flex items-center justify-center">
-                                            <Train className="w-2.5 h-2.5 text-white" />
-                                          </div>
-                                          <span className="text-blue-600 font-medium text-sm">
-                                            {leg.product.number && leg.product.number !== 'Unknown' ? (
-                                              <>
-                                                {leg.product.categoryCode === 'IC' ? `${trainType} train` : 
-                                                 leg.product.categoryCode === 'SPR' ? `${trainType} train` :
-                                                 `${trainType} train`} (→)
-                                              </>
-                                            ) : (
-                                              `{trainType} train (→)`
-                                            )}
-                                          </span>
-                                          <span className="text-blue-600 font-medium">
-                                            ({leg.product.number || '?'}) {leg.destination.name}
-                                          </span>
-                                          {leg.direction && (
-                                            <span className="text-gray-500 text-sm">
-                                              → {leg.direction}
-                                            </span>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <div className="flex items-center space-x-1">
-                                          <div className="w-4 h-4 bg-gray-400 rounded-sm flex items-center justify-center">
-                                            <span className="text-white text-xs">👤</span>
-                                          </div>
-                                          <span className="text-gray-600 text-sm">
-                                            {Math.round(leg.duration / 60)}min walking
-                                          </span>
-                                          <span className="text-gray-600">
-                                            {leg.destination.name}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    <span className="font-medium text-gray-700">
-                                      {formatTime(leg.destination.actualDateTime || leg.destination.plannedDateTime)}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          
-                          {/* Material summary at bottom */}
-                          <div className="mt-3 pt-2 border-t border-gray-100">
-                            <div className="text-xs text-gray-600">
-                              {trip.legs
-                                .filter(leg => leg.travelType === 'PUBLIC_TRANSPORT')
-                                .map(leg => {
-                                  const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-                                  const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
-                                  const seatingData = legSeatingData[legKey];
-                                  return seatingData ? 
-                                    `${trainType} (${seatingData.first} : ${seatingData.second})` : 
-                                    `${trainType} (? : ?)`;
-                                })
-                                .join(' - ')}
-                            </div>
-                          </div>
+                          <LegDetails 
+                            legs={trip.legs} 
+                            originalDestination={originalDestination}
+                            legSeatingData={legSeatingData}
+                            legTrainTypes={legTrainTypes}
+                          />
                         </div>
                       )}
                     </CardContent>
