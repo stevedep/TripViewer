@@ -2,7 +2,7 @@
 
 This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
 
-**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, and "Now" button for datetime picker - NS API key configured for production deployment (August 2, 2025)
+**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, "Now" button for datetime picker, and enhanced material type formatting with styled blue containers - NS API key configured for production deployment (August 2, 2025)
 
 Key features:
 - Real-time trip search with flexible datetime selection
@@ -42,6 +42,7 @@ The application now operates as a static website with all API calls made directl
 - **Enhanced Trip Navigation**: All departure and arrival times are now clickable with hover effects
 - **Alternative Trips Header Format**: Created TripCompactHeader component showing detailed journey breakdown in header style
 - **"Now" Button**: Added convenient "Now" button to datetime picker for setting current time instantly
+- **Enhanced Material Type Formatting**: Updated both main trip cards and alternative trips modal to display material information (e.g., "DDZ (106 : 439) - VIRM (120 : 425)") in styled blue containers with consistent design
 
 **Previous Changes (August 1, 2025):**
 - Removed server-side proxy pattern for true static deployment
