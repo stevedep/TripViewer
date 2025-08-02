@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TripCard from "./trip-card";
 import { NSApiResponseSchema, type NSApiResponse, type TripSearch } from "@shared/schema";
+import { searchTrips } from "@/lib/nsApi";
 
 export default function TripResults() {
   const [searchParams, setSearchParams] = useState<TripSearch | null>(null);
@@ -40,8 +41,9 @@ export default function TripResults() {
 
   // Query trips data - must be called before any conditional returns
   const { data, error, isError, isLoading: queryLoading } = useQuery<NSApiResponse>({
-    queryKey: ["/api/trips", searchParams?.fromStation, searchParams?.toStation, searchParams?.dateTime],
+    queryKey: ["/api/trips", searchParams?.fromStation, searchParams?.toStation, searchParams?.dateTime, searchParams?.excludeBus, searchParams?.excludeTram, searchParams?.excludeMetro, searchParams?.walkingOnly],
     enabled: !!searchParams,
+    queryFn: () => searchTrips(searchParams!),
     select: (rawData) => {
       console.log("Raw API data received:", rawData);
       // Return raw data directly to avoid schema validation issues

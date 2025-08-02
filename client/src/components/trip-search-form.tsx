@@ -179,6 +179,7 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
     setIsSearching(true);
     try {
       console.log("Dispatching tripSearch event with data:", data);
+      console.log("Form data excludeBus:", data.excludeBus);
       
       if (onSearch) {
         onSearch(data);
