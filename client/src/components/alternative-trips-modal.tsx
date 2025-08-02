@@ -306,102 +306,73 @@ export default function AlternativeTripsModal({
                         </div>
                       </div>
                       
-                      {/* Material Information - Always visible but compact */}
-                      <div className="mt-3 space-y-2">
-                        {trip.legs.map((leg, legIndex) => {
-                          const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-                          const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
-                          const seatingData = legSeatingData[legKey];
-                          
-                          // On-time percentage based on train type
-                          const onTimePercentage = leg.product.categoryCode === 'IC' ? '89%' : 
-                                                 leg.product.categoryCode === 'SPR' ? '94%' : 
-                                                 leg.product.categoryCode === 'ICD' ? '87%' : '92%';
-                          
-                          // Crowdedness based on departure time
-                          const hour = new Date(leg.origin.plannedDateTime).getHours();
-                          const crowdedness = (hour >= 7 && hour <= 9 || hour >= 17 && hour <= 19) ? 'Busy' :
-                                            (hour >= 10 && hour <= 16) ? 'Quiet' : 'Normal';
-                          
-                          return (
-                            <div key={legIndex} className="bg-gray-50 p-2 rounded">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-                                {seatingData ? (
-                                  <span className="text-xs sm:text-sm text-ns-blue font-medium">
-                                    {trainType} ({seatingData.first} : {seatingData.second})
-                                  </span>
-                                ) : (
-                                  <span className="text-xs sm:text-sm text-gray-500">
-                                    {trainType} (? : ?)
-                                  </span>
-                                )}
-                                <div className="flex items-center space-x-1 sm:space-x-2">
-                                  <span className="bg-green-100 text-green-700 px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium">
-                                    {onTimePercentage} on time
-                                  </span>
-                                  <span className="bg-yellow-100 text-yellow-700 px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium">
-                                    {crowdedness}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
                       {/* Expanded Details - Hidden by default */}
                       {isExpanded && (
                         <div className="mt-4 border-t border-gray-200 pt-4">
-                          <div className="text-sm font-medium text-gray-700 mb-3">Journey Details</div>
-                          <div className="space-y-2">
-                            {trip.legs.map((leg, legIndex) => {
-                              const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-                              const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
-                              const seatingData = legSeatingData[legKey];
-                              
-                              // Calculate transfer time if not the first leg
-                              const transferTime = legIndex > 0 ? (() => {
-                                const prevLeg = trip.legs[legIndex - 1];
-                                const arrivalTime = new Date(prevLeg.destination.actualDateTime || prevLeg.destination.plannedDateTime);
-                                const departureTime = new Date(leg.origin.actualDateTime || leg.origin.plannedDateTime);
-                                const diffMinutes = Math.round((departureTime.getTime() - arrivalTime.getTime()) / (1000 * 60));
-                                return diffMinutes > 0 ? diffMinutes : 0;
-                              })() : null;
-                              
-                              return (
-                                <div key={legIndex}>
-                                  {/* Transfer time display */}
-                                  {transferTime !== null && transferTime > 0 && (
-                                    <div className="text-xs text-blue-600 font-medium pl-4 mb-1">
-                                      ⏱ transfer: {transferTime}min
-                                    </div>
-                                  )}
+                          {/* Trip Header Card Style */}
+                          <div className="bg-white rounded-lg border border-gray-200 p-4">
+                            {/* Header with transfers and train types */}
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="text-sm text-gray-600">
+                                {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {trip.legs
+                                  .filter(leg => leg.travelType === 'PUBLIC_TRANSPORT')
+                                  .map(leg => {
+                                    const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+                                    const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+                                    const seatingData = legSeatingData[legKey];
+                                    return seatingData ? 
+                                      `${trainType} (${seatingData.first} : ${seatingData.second})` : 
+                                      `${trainType} (? : ?)`;
+                                  })
+                                  .join(' - ')}
+                              </div>
+                            </div>
+
+                            {/* Material Information with performance metrics */}
+                            <div className="space-y-2">
+                              {trip.legs
+                                .filter(leg => leg.travelType === 'PUBLIC_TRANSPORT')
+                                .map((leg, legIndex) => {
+                                  const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+                                  const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+                                  const seatingData = legSeatingData[legKey];
                                   
-                                  {/* Journey step */}
-                                  <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded text-xs">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="font-medium text-gray-700">
-                                        {formatTime(leg.origin.actualDateTime || leg.origin.plannedDateTime)}
-                                      </span>
-                                      <span className="text-gray-500">
-                                        {leg.travelType === 'PUBLIC_TRANSPORT' ? (
-                                          <span className="text-blue-600">
-                                            {trainType} ({leg.product.number}) {leg.destination.name} → {leg.direction}
-                                          </span>
-                                        ) : (
-                                          <span className="text-gray-600">
-                                            {Math.round(leg.duration / 60)}min {leg.travelType.toLowerCase()}
-                                          </span>
-                                        )}
-                                      </span>
+                                  // On-time percentage based on train type
+                                  const onTimePercentage = leg.product.categoryCode === 'IC' ? '89%' : 
+                                                         leg.product.categoryCode === 'SPR' ? '94%' : 
+                                                         leg.product.categoryCode === 'ICD' ? '87%' : '92%';
+                                  
+                                  // Crowdedness based on departure time
+                                  const hour = new Date(leg.origin.plannedDateTime).getHours();
+                                  const crowdedness = (hour >= 7 && hour <= 9 || hour >= 17 && hour <= 19) ? 'Busy' :
+                                                    (hour >= 10 && hour <= 16) ? 'Quiet' : 'Normal';
+                                  
+                                  return (
+                                    <div key={legIndex} className="flex items-center justify-between py-2">
+                                      {seatingData ? (
+                                        <span className="text-sm text-ns-blue font-medium">
+                                          {trainType} ({seatingData.first} : {seatingData.second})
+                                        </span>
+                                      ) : (
+                                        <span className="text-sm text-gray-500">
+                                          {trainType} (? : ?)
+                                        </span>
+                                      )}
+                                      <div className="flex items-center space-x-2">
+                                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                                          {onTimePercentage} on time
+                                        </span>
+                                        <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                                          {crowdedness}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <div className="text-gray-700 font-medium">
-                                      {formatTime(leg.destination.actualDateTime || leg.destination.plannedDateTime)}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                  );
+                                })}
+                            </div>
                           </div>
                         </div>
                       )}
