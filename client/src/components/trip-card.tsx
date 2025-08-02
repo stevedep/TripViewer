@@ -416,33 +416,36 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   return (
     <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
       {/* Trip Header */}
-      <CardContent className="p-6 border-b border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
+      <CardContent className="p-4 border-b border-gray-100">
+        {/* Status and Journey Time - separate lines for mobile */}
+        <div className="mb-3 space-y-2">
+          <div className="flex items-center justify-between">
             <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${statusInfo.className}`}>
               {statusInfo.icon}
               <span>{statusInfo.text}</span>
             </div>
-            <div className="text-gray-600 text-sm max-w-2xl space-y-1">
-              {(() => {
-                const headerInfo = getDetailedHeader();
-                return (
-                  <>
-                    <div className="font-medium">{headerInfo.transferCount}</div>
-                    <div className="space-y-1">{headerInfo.transferDetails}</div>
-                    {headerInfo.materialInfo && (
-                      <div className="text-ns-blue font-medium">{headerInfo.materialInfo}</div>
-                    )}
-                  </>
-                );
-              })()}
+            <div className="text-right">
+              <div className="text-xl font-bold text-gray-800">
+                {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
+              </div>
+              <div className="text-xs text-gray-600">Total journey</div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-gray-800">
-              {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
-            </div>
-            <div className="text-sm text-gray-600">Total journey</div>
+          
+          {/* Trip details on separate line */}
+          <div className="text-gray-600 text-sm space-y-1">
+            {(() => {
+              const headerInfo = getDetailedHeader();
+              return (
+                <>
+                  <div className="font-medium">{headerInfo.transferCount}</div>
+                  <div className="space-y-1">{headerInfo.transferDetails}</div>
+                  {headerInfo.materialInfo && (
+                    <div className="text-ns-blue font-medium text-xs">{headerInfo.materialInfo}</div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 
