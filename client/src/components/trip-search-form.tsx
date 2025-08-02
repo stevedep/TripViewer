@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Calendar, Clock, Search, Route, ChevronDown } from "lucide-react";
+import { MapPin, Calendar, Clock, Search, Route, ChevronDown, Settings, Bus, Car, Train, Footprints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TripSearchSchema, type TripSearch } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { searchStations } from "@/lib/nsApi";
@@ -156,6 +157,10 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
       fromStation: "Den Haag HS",
       toStation: "Eindhoven Centraal",
       dateTime: new Date().toISOString().slice(0, 16),
+      excludeBus: false,
+      excludeTram: false,
+      excludeMetro: false,
+      walkingOnly: false,
     },
   });
 
@@ -296,6 +301,100 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
                     </>
                   )}
                 </Button>
+              </div>
+            </div>
+
+            {/* Travel Options */}
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Settings className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">Travel Options</span>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="excludeBus"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Bus className="w-4 h-4 text-gray-600" />
+                        <FormLabel className="text-sm font-normal">
+                          Exclude Buses
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="excludeTram"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Car className="w-4 h-4 text-gray-600" />
+                        <FormLabel className="text-sm font-normal">
+                          Exclude Trams
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="excludeMetro"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Train className="w-4 h-4 text-gray-600" />
+                        <FormLabel className="text-sm font-normal">
+                          Exclude Metro
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="walkingOnly"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Footprints className="w-4 h-4 text-gray-600" />
+                        <FormLabel className="text-sm font-normal">
+                          Walking Only
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
           </form>

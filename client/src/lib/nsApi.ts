@@ -23,6 +23,10 @@ export async function searchTrips(params: {
   fromStation: string;
   toStation: string;
   dateTime: string;
+  excludeBus?: boolean;
+  excludeTram?: boolean;
+  excludeMetro?: boolean;
+  walkingOnly?: boolean;
 }) {
   // Validate parameters
   const searchParams = TripSearchSchema.parse(params);
@@ -55,8 +59,26 @@ export async function searchTrips(params: {
   apiUrl.searchParams.set("lang", "nl");
   apiUrl.searchParams.set("product", "OVCHIPKAART_ENKELE_REIS");
   apiUrl.searchParams.set("travelClass", "2");
-  apiUrl.searchParams.set("firstMileModality", "PUBLIC_TRANSPORT");
-  apiUrl.searchParams.set("lastMileModality", "PUBLIC_TRANSPORT");
+  
+  // Set modality based on travel preferences
+  if (searchParams.walkingOnly) {
+    apiUrl.searchParams.set("firstMileModality", "WALK");
+    apiUrl.searchParams.set("lastMileModality", "WALK");
+  } else {
+    apiUrl.searchParams.set("firstMileModality", "PUBLIC_TRANSPORT");
+    apiUrl.searchParams.set("lastMileModality", "PUBLIC_TRANSPORT");
+  }
+  
+  // Add exclusions for specific transport types
+  if (searchParams.excludeBus) {
+    apiUrl.searchParams.set("excludeTransportType", "BUS");
+  }
+  if (searchParams.excludeTram) {
+    apiUrl.searchParams.set("excludeTransportType", "TRAM");
+  }
+  if (searchParams.excludeMetro) {
+    apiUrl.searchParams.set("excludeTransportType", "METRO");
+  }
 
   console.log("Making direct NS API request:", apiUrl.toString());
 

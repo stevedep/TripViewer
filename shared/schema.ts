@@ -210,6 +210,10 @@ export const TripSearchSchema = z.object({
   fromStation: z.string().min(1, "From station is required"),
   toStation: z.string().min(1, "To station is required"),
   dateTime: z.string().min(1, "Date and time is required"),
+  excludeBus: z.boolean().optional().default(false),
+  excludeTram: z.boolean().optional().default(false),
+  excludeMetro: z.boolean().optional().default(false),
+  walkingOnly: z.boolean().optional().default(false),
 });
 
 export type Station = z.infer<typeof StationSchema>;
