@@ -178,36 +178,20 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             </div>
           );
         } else {
+          // For transit legs, show the destination of this leg
           transferParts.push(
             <div key={`transfer-${index}`} className="text-sm">
-              [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{transferStation}</span>:{waitingTime}min{platformInfo ? `:${platformInfo}` : ""}]
+              [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>:{waitingTime}min{platformInfo ? `:${platformInfo}` : ""}]
             </div>
           );
         }
       } else {
-        // First leg
+        // First leg - show destination
         transferParts.push(
           <div key={`leg-${index}`} className="text-sm">
-            [{legDurationMinutes}min][{modalityType}]
+            [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>]
           </div>
         );
-      }
-      
-      // Add intermediate stops for this leg if they exist
-      if (leg.stops && leg.stops.length > 0) {
-        leg.stops.forEach((stop, stopIndex) => {
-          // Only show stops that are not the origin or destination
-          if (stop.name !== leg.origin.name && stop.name !== leg.destination.name) {
-            const stopTime = new Date(stop.actualDateTime || stop.plannedDateTime);
-            const stopDuration = Math.round((stopTime.getTime() - legStart.getTime()) / (1000 * 60));
-            
-            transferParts.push(
-              <div key={`stop-${index}-${stopIndex}`} className="text-sm text-gray-600">
-                [{stopDuration}min][{modalityType}][<span className="font-bold">{stop.name}</span>]
-              </div>
-            );
-          }
-        });
       }
     });
     
