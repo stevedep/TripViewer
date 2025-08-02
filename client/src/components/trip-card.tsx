@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, Clock, AlertTriangle, Train, ArrowRight } from "lucide-react";
+import {
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Train,
+  ArrowRight,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import LegDetails from "./leg-details";
@@ -25,9 +31,10 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     }
 
     // Check if any leg has delays
-    const hasDelays = trip.legs.some(leg => 
-      leg.origin.actualDateTime !== leg.origin.plannedDateTime ||
-      leg.destination.actualDateTime !== leg.destination.plannedDateTime
+    const hasDelays = trip.legs.some(
+      (leg) =>
+        leg.origin.actualDateTime !== leg.origin.plannedDateTime ||
+        leg.destination.actualDateTime !== leg.destination.plannedDateTime,
     );
 
     if (hasDelays) {
@@ -57,14 +64,17 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
   // Format time
   const formatTime = (dateTime: string) => {
-    return new Date(dateTime).toLocaleTimeString('nl-NL', {
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateTime).toLocaleTimeString("nl-NL", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   // Calculate delay in minutes
-  const calculateDelay = (plannedDateTime: string, actualDateTime: string | undefined): number => {
+  const calculateDelay = (
+    plannedDateTime: string,
+    actualDateTime: string | undefined,
+  ): number => {
     if (!actualDateTime) return 0;
     const planned = new Date(plannedDateTime);
     const actual = new Date(actualDateTime);
@@ -73,17 +83,19 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   };
 
   // Format delay display
-  const formatDelay = (delayMinutes: number): { text: string; className: string } => {
-    if (delayMinutes === 0) return { text: '', className: '' };
+  const formatDelay = (
+    delayMinutes: number,
+  ): { text: string; className: string } => {
+    if (delayMinutes === 0) return { text: "", className: "" };
     if (delayMinutes > 0) {
-      return { 
-        text: `+${delayMinutes} min`, 
-        className: 'text-red-600 font-medium' 
+      return {
+        text: `+${delayMinutes} min`,
+        className: "text-red-600 font-medium",
       };
     } else {
-      return { 
-        text: `${delayMinutes} min`, 
-        className: 'text-green-600 font-medium' 
+      return {
+        text: `${delayMinutes} min`,
+        className: "text-green-600 font-medium",
       };
     }
   };
@@ -95,41 +107,57 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   };
 
   // State to store train types and seating data for each leg and API call details
-  const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>({});
-  const [legSeatingData, setLegSeatingData] = useState<{ [key: string]: { first: number; second: number } }>({});
-  const [legCarriageData, setLegCarriageData] = useState<{ [key: string]: { carriageCount: number; bakkenImages: string[] } }>({});
-  const [apiCallDetails, setApiCallDetails] = useState<Array<{
-    url: string;
-    response: any;
-    error?: string;
-    timestamp: string;
-  }>>([]);
+  const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>(
+    {},
+  );
+  const [legSeatingData, setLegSeatingData] = useState<{
+    [key: string]: { first: number; second: number };
+  }>({});
+  const [legCarriageData, setLegCarriageData] = useState<{
+    [key: string]: { carriageCount: number; bakkenImages: string[] };
+  }>({});
+  const [apiCallDetails, setApiCallDetails] = useState<
+    Array<{
+      url: string;
+      response: any;
+      error?: string;
+      timestamp: string;
+    }>
+  >([]);
   const [showApiDetails, setShowApiDetails] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
-  
+
   // No longer need to filter at card level - parent component handles filtering
 
   // Get leg category codes for display
   const getLegCategoryCodes = () => {
-    return trip.legs.map(leg => {
-      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-      const trainType = legTrainTypes[legKey];
-      return trainType || leg.product.categoryCode;
-    }).filter(code => code && code.trim()).join(" → ");
+    return trip.legs
+      .map((leg) => {
+        const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+        const trainType = legTrainTypes[legKey];
+        return trainType || leg.product.categoryCode;
+      })
+      .filter((code) => code && code.trim())
+      .join(" → ");
   };
 
   // Calculate waiting time between legs in minutes
   const getWaitingTime = (currentLegIndex: number): number => {
     if (currentLegIndex === 0) return 0; // No waiting for first leg
-    
+
     const currentLeg = trip.legs[currentLegIndex];
     const previousLeg = trip.legs[currentLegIndex - 1];
-    
+
     if (!currentLeg || !previousLeg) return 0;
-    
-    const arrivalTime = new Date(previousLeg.destination.actualDateTime || previousLeg.destination.plannedDateTime);
-    const departureTime = new Date(currentLeg.origin.actualDateTime || currentLeg.origin.plannedDateTime);
-    
+
+    const arrivalTime = new Date(
+      previousLeg.destination.actualDateTime ||
+        previousLeg.destination.plannedDateTime,
+    );
+    const departureTime = new Date(
+      currentLeg.origin.actualDateTime || currentLeg.origin.plannedDateTime,
+    );
+
     const waitingMs = departureTime.getTime() - arrivalTime.getTime();
     return Math.max(0, Math.round(waitingMs / (1000 * 60))); // Convert to minutes, minimum 0
   };
@@ -137,136 +165,240 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   // Generate detailed header structure with multiple lines
   const getDetailedHeader = () => {
     // Line 1: Transfer count
-    const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`;
-    
+    const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? "s" : ""}`;
+
     // Line 2: Travel and transfer details - each leg shows travel to destination, then transfer info
     const transferParts: React.ReactNode[] = [];
     trip.legs.forEach((leg, index) => {
       // Calculate leg duration
-      const legStart = new Date(leg.origin.actualDateTime || leg.origin.plannedDateTime);
-      const legEnd = new Date(leg.destination.actualDateTime || leg.destination.plannedDateTime);
-      const legDurationMinutes = Math.round((legEnd.getTime() - legStart.getTime()) / (1000 * 60));
-      
+      const legStart = new Date(
+        leg.origin.actualDateTime || leg.origin.plannedDateTime,
+      );
+      const legEnd = new Date(
+        leg.destination.actualDateTime || leg.destination.plannedDateTime,
+      );
+      const legDurationMinutes = Math.round(
+        (legEnd.getTime() - legStart.getTime()) / (1000 * 60),
+      );
+
       // Get modality type with better detection
       let modalityType = "train"; // default
       if (leg.product.type === "TRAM") modalityType = "tram";
-      else if (leg.product.type === "BUS" || leg.product.categoryCode === "BUS") modalityType = "bus";
-      else if (leg.product.type === "METRO" || leg.product.categoryCode === "METRO") modalityType = "metro";
-      else if (leg.product.categoryCode === "WALK" || leg.product.type === "WALK") modalityType = "walking";
-      else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk")) modalityType = "walking";
-      else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("bus")) modalityType = "bus";
-      
+      else if (leg.product.type === "BUS" || leg.product.categoryCode === "BUS")
+        modalityType = "bus";
+      else if (
+        leg.product.type === "METRO" ||
+        leg.product.categoryCode === "METRO"
+      )
+        modalityType = "metro";
+      else if (
+        leg.product.categoryCode === "WALK" ||
+        leg.product.type === "WALK"
+      )
+        modalityType = "walking";
+      else if (
+        leg.product.displayName &&
+        leg.product.displayName.toLowerCase().includes("walk")
+      )
+        modalityType = "walking";
+      else if (
+        leg.product.displayName &&
+        leg.product.displayName.toLowerCase().includes("bus")
+      )
+        modalityType = "bus";
+
       // Get transport mode details
       const getModeDetails = (mode: string) => {
-        switch(mode) {
-          case "train": return { icon: "🚆", color: "text-blue-600", bgColor: "bg-blue-50" };
-          case "tram": return { icon: "🚊", color: "text-green-600", bgColor: "bg-green-50" };
-          case "bus": return { icon: "🚌", color: "text-orange-600", bgColor: "bg-orange-50" };
-          case "metro": return { icon: "🚇", color: "text-purple-600", bgColor: "bg-purple-50" };
-          case "walking": return { icon: "🚶", color: "text-gray-600", bgColor: "bg-gray-50" };
-          default: return { icon: "🚉", color: "text-slate-600", bgColor: "bg-slate-50" };
+        switch (mode) {
+          case "train":
+            return {
+              icon: "🚆",
+              color: "text-blue-600",
+              bgColor: "bg-blue-50",
+            };
+          case "tram":
+            return {
+              icon: "🚊",
+              color: "text-green-600",
+              bgColor: "bg-green-50",
+            };
+          case "bus":
+            return {
+              icon: "🚌",
+              color: "text-orange-600",
+              bgColor: "bg-orange-50",
+            };
+          case "metro":
+            return {
+              icon: "🚇",
+              color: "text-purple-600",
+              bgColor: "bg-purple-50",
+            };
+          case "walking":
+            return {
+              icon: "🚶",
+              color: "text-gray-600",
+              bgColor: "bg-gray-50",
+            };
+          default:
+            return {
+              icon: "🚉",
+              color: "text-slate-600",
+              bgColor: "bg-slate-50",
+            };
         }
       };
-      
+
       const modeDetails = getModeDetails(modalityType);
-      
+
       // Get quiet car info for trains
-      const isQuiet = leg.product.displayName?.toLowerCase().includes('stil') || 
-                     leg.product.displayName?.toLowerCase().includes('quiet');
-      
+      const isQuiet =
+        leg.product.displayName?.toLowerCase().includes("stil") ||
+        leg.product.displayName?.toLowerCase().includes("quiet");
+
       // Get departure platform for trains and trams
-      const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack;
-      const platformInfo = (modalityType === "train" || modalityType === "tram") && departurePlatform 
-                          ? ` (${departurePlatform})` 
-                          : "";
-      
+      const departurePlatform =
+        leg.origin.actualTrack || leg.origin.plannedTrack;
+      const platformInfo =
+        (modalityType === "train" || modalityType === "tram") &&
+        departurePlatform
+          ? ` (${departurePlatform})`
+          : "";
+
       // Get departure and arrival times
-      const departureTime = new Date(leg.origin.actualDateTime || leg.origin.plannedDateTime);
-      const arrivalTime = new Date(leg.destination.actualDateTime || leg.destination.plannedDateTime);
-      const formatTime = (date: Date) => date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-      
+      const departureTime = new Date(
+        leg.origin.actualDateTime || leg.origin.plannedDateTime,
+      );
+      const arrivalTime = new Date(
+        leg.destination.actualDateTime || leg.destination.plannedDateTime,
+      );
+      const formatTime = (date: Date) =>
+        date.toLocaleTimeString("nl-NL", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
       transferParts.push(
-        <div key={`leg-${index}`} className={`text-sm ${modeDetails.bgColor} rounded overflow-hidden`}>
+        <div
+          key={`leg-${index}`}
+          className={`text-sm ${modeDetails.bgColor} rounded overflow-hidden`}
+        >
           {/* Mobile-optimized layout */}
           <div className="flex items-center gap-1 p-2">
             {/* Start time - smaller on mobile */}
             <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
               {formatTime(departureTime)}
             </div>
-            
+
             <span className="text-lg flex-shrink-0">{modeDetails.icon}</span>
-            
+
             <div className="flex-1 min-w-0 px-1">
               <div className="flex items-center gap-1 flex-wrap">
-                <span className="text-xs text-gray-500 font-mono">{legDurationMinutes}min</span>
-                {isQuiet && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">quiet</span>}
-                <span className={`text-xs ${modeDetails.color} font-medium`}>{modalityType}</span>
+                <span className="text-xs text-gray-500 font-mono">
+                  {legDurationMinutes}min
+                </span>
+                {isQuiet && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">
+                    quiet
+                  </span>
+                )}
+                <span className={`text-xs ${modeDetails.color} font-medium`}>
+                  {modalityType}
+                </span>
               </div>
               <div className={`font-bold ${modeDetails.color} truncate`}>
-                {leg.destination.name}{platformInfo}
+                {leg.destination.name}
+                {platformInfo}
               </div>
             </div>
-            
+
             {/* End time - smaller on mobile */}
             <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
               {formatTime(arrivalTime)}
             </div>
           </div>
-        </div>
+        </div>,
       );
-      
+
       // If there's a next leg, show transfer info at this destination
       if (index < trip.legs.length - 1) {
         const nextLeg = trip.legs[index + 1];
         const waitingTime = getWaitingTime(index + 1);
-        
+
         // Skip transfer info for walking (no platforms/waiting)
         let nextModalityType = "train"; // default
         if (nextLeg.product.type === "TRAM") nextModalityType = "tram";
-        else if (nextLeg.product.type === "BUS" || nextLeg.product.categoryCode === "BUS") nextModalityType = "bus";
-        else if (nextLeg.product.type === "METRO" || nextLeg.product.categoryCode === "METRO") nextModalityType = "metro";
-        else if (nextLeg.product.categoryCode === "WALK" || nextLeg.product.type === "WALK") nextModalityType = "walking";
-        else if (nextLeg.product.displayName && nextLeg.product.displayName.toLowerCase().includes("walk")) nextModalityType = "walking";
-        else if (nextLeg.product.displayName && nextLeg.product.displayName.toLowerCase().includes("bus")) nextModalityType = "bus";
-        
+        else if (
+          nextLeg.product.type === "BUS" ||
+          nextLeg.product.categoryCode === "BUS"
+        )
+          nextModalityType = "bus";
+        else if (
+          nextLeg.product.type === "METRO" ||
+          nextLeg.product.categoryCode === "METRO"
+        )
+          nextModalityType = "metro";
+        else if (
+          nextLeg.product.categoryCode === "WALK" ||
+          nextLeg.product.type === "WALK"
+        )
+          nextModalityType = "walking";
+        else if (
+          nextLeg.product.displayName &&
+          nextLeg.product.displayName.toLowerCase().includes("walk")
+        )
+          nextModalityType = "walking";
+        else if (
+          nextLeg.product.displayName &&
+          nextLeg.product.displayName.toLowerCase().includes("bus")
+        )
+          nextModalityType = "bus";
+
         if (nextModalityType !== "walking" && waitingTime > 0) {
           // Get platform information for the transfer
-          const arrivalPlatform = leg.destination.actualTrack || leg.destination.plannedTrack;
-          const departurePlatform = nextLeg.origin.actualTrack || nextLeg.origin.plannedTrack;
-          
+          const arrivalPlatform =
+            leg.destination.actualTrack || leg.destination.plannedTrack;
+          const departurePlatform =
+            nextLeg.origin.actualTrack || nextLeg.origin.plannedTrack;
+
           let platformInfo = "";
           if (arrivalPlatform && departurePlatform) {
             platformInfo = `:${arrivalPlatform}->${departurePlatform}`;
           } else if (departurePlatform) {
             platformInfo = `:${departurePlatform}`;
           }
-          
+
           transferParts.push(
-            <div key={`transfer-${index}`} className="text-xs text-black ml-8 -mt-1 mb-1">
+            <div
+              key={`transfer-${index}`}
+              className="text-xs text-black ml-8 -mt-1 mb-1"
+            >
               ↻ transfer: {waitingTime}min{platformInfo}
-            </div>
+            </div>,
           );
         }
       }
     });
-    
+
     // Line 3: Material/train info with seating - only show if data is available
     const materialParts: string[] = [];
     trip.legs.forEach((leg, index) => {
       const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
       const trainType = legTrainTypes[legKey];
-      
+
       // Only add material info if we have both train type and seating data
       const seatingData = legSeatingData[legKey];
-      if (trainType && seatingData && trainType !== 'undefined') {
-        materialParts.push(`${trainType} (${seatingData.first} : ${seatingData.second})`);
+      if (trainType && seatingData && trainType !== "undefined") {
+        materialParts.push(
+          `${trainType} (${seatingData.first} : ${seatingData.second})`,
+        );
       }
     });
-    
+
     return {
       transferCount,
       transferDetails: transferParts,
-      materialInfo: materialParts.length > 0 ? materialParts.join(' - ') : null
+      materialInfo: materialParts.length > 0 ? materialParts.join(" - ") : null,
     };
   };
 
@@ -286,7 +418,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           const trainNumber = leg.product.number;
           const destinationStationCode = leg.destination.stationCode;
           const dateTime = leg.origin.plannedDateTime;
-          
+
           if (!trainNumber || !destinationStationCode) return null;
 
           // For static deployment, make direct call to NS Virtual Train API with CORS and seating features
@@ -295,29 +427,38 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
           const response = await fetch(virtualTrainUrl, {
             headers: {
-              'Ocp-Apim-Subscription-Key': import.meta.env.VITE_NS_API_KEY || '',
-            }
+              "Ocp-Apim-Subscription-Key":
+                import.meta.env.VITE_NS_API_KEY || "",
+            },
           });
-          
+
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
-          
+
           const data = await response.json();
 
           // Log the full structure to understand seat data format
-          console.log("Full Virtual Train API Response Structure:", JSON.stringify(data, null, 2));
+          console.log(
+            "Full Virtual Train API Response Structure:",
+            JSON.stringify(data, null, 2),
+          );
 
           // Store API call details
           apiCalls.push({
             url: virtualTrainUrl,
             response: data,
-            error: response.ok ? undefined : `${response.status}: ${response.statusText}`,
-            timestamp
+            error: response.ok
+              ? undefined
+              : `${response.status}: ${response.statusText}`,
+            timestamp,
           });
-          
+
           if (!response.ok) {
-            console.warn(`Failed to fetch train details for ${trainNumber}:`, response.statusText);
+            console.warn(
+              `Failed to fetch train details for ${trainNumber}:`,
+              response.statusText,
+            );
             return null;
           }
 
@@ -326,7 +467,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           let secondClassSeats = 0;
           let carriageCount = 0;
           let bakkenImages: string[] = [];
-          
+
           if (data.materieeldelen && data.materieeldelen.length > 0) {
             data.materieeldelen.forEach((deel: any) => {
               // Count carriages from bakken array and collect images
@@ -352,45 +493,52 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             firstClassSeats: firstClassSeats,
             secondClassSeats: secondClassSeats,
             carriageCount: carriageCount,
-            bakkenImages: bakkenImages
+            bakkenImages: bakkenImages,
           };
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           console.warn(`Error fetching train details for leg:`, error);
-          
+
           // Store error details
           apiCalls.push({
             url: `Error constructing URL for leg ${leg.product.number}`,
             response: null,
             error: errorMessage,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
-          
+
           return null;
         }
       });
 
       const results = await Promise.all(promises);
       const newTrainTypes: { [key: string]: string } = {};
-      const newSeatingData: { [key: string]: { first: number; second: number } } = {};
-      const newCarriageData: { [key: string]: { carriageCount: number; bakkenImages: string[] } } = {};
-      
-      results.forEach(result => {
+      const newSeatingData: {
+        [key: string]: { first: number; second: number };
+      } = {};
+      const newCarriageData: {
+        [key: string]: { carriageCount: number; bakkenImages: string[] };
+      } = {};
+
+      results.forEach((result) => {
         if (result) {
           newTrainTypes[result.legKey] = result.trainType;
           newSeatingData[result.legKey] = {
             first: result.firstClassSeats || 0,
-            second: result.secondClassSeats || 0
+            second: result.secondClassSeats || 0,
           };
           newCarriageData[result.legKey] = {
             carriageCount: result.carriageCount || 0,
-            bakkenImages: result.bakkenImages || []
+            bakkenImages: result.bakkenImages || [],
           };
-          
+
           // Emit custom event for the filter to listen to
-          window.dispatchEvent(new CustomEvent('trainTypeUpdated', {
-            detail: { trainType: result.trainType }
-          }));
+          window.dispatchEvent(
+            new CustomEvent("trainTypeUpdated", {
+              detail: { trainType: result.trainType },
+            }),
+          );
         }
       });
 
@@ -398,12 +546,14 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       setLegSeatingData(newSeatingData);
       setLegCarriageData(newCarriageData);
       setApiCallDetails(apiCalls);
-      
+
       // Emit enhanced types to parent component for filtering
       const enhancedTypes = Object.values(newTrainTypes);
-      window.dispatchEvent(new CustomEvent('tripEnhancedDataUpdated', {
-        detail: { tripId: trip.uid, enhancedTypes }
-      }));
+      window.dispatchEvent(
+        new CustomEvent("tripEnhancedDataUpdated", {
+          detail: { tripId: trip.uid, enhancedTypes },
+        }),
+      );
     };
 
     if (trip.legs.length > 0) {
@@ -420,18 +570,99 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         {/* Status and Journey Time - separate lines for mobile */}
         <div className="mb-3 space-y-2">
           <div className="flex items-center justify-between">
-            <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${statusInfo.className}`}>
+            <div
+              className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${statusInfo.className}`}
+            >
               {statusInfo.icon}
               <span>{statusInfo.text}</span>
             </div>
+            {/* Trip Overview */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-8 w-full">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-800">
+                    {formatTime(
+                      firstLeg.origin.actualDateTime ||
+                        firstLeg.origin.plannedDateTime,
+                    )}
+                  </div>
+                  {(() => {
+                    const delay = calculateDelay(
+                      firstLeg.origin.plannedDateTime,
+                      firstLeg.origin.actualDateTime,
+                    );
+                    const delayInfo = formatDelay(delay);
+                    return delayInfo.text ? (
+                      <div className={`text-xs ${delayInfo.className}`}>
+                        {delayInfo.text}
+                      </div>
+                    ) : null;
+                  })()}
+                  <div className="text-sm text-gray-600">
+                    {firstLeg.origin.name}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Platform{" "}
+                    {firstLeg.origin.actualTrack ||
+                      firstLeg.origin.plannedTrack ||
+                      "?"}
+                  </div>
+                </div>
+                <div className="flex-1 relative">
+                  <div className="h-px bg-gray-300 relative">
+                    <div
+                      className={`absolute inset-0 h-full rounded ${getLineColor()}`}
+                    ></div>
+                    {trip.transfers > 0 ? (
+                      <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-yellow-600 bg-white px-1 w-6 h-6" />
+                    ) : (
+                      <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-6 h-6" />
+                    )}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-800">
+                    {formatTime(
+                      lastLeg.destination.actualDateTime ||
+                        lastLeg.destination.plannedDateTime,
+                    )}
+                  </div>
+                  {(() => {
+                    const delay = calculateDelay(
+                      lastLeg.destination.plannedDateTime,
+                      lastLeg.destination.actualDateTime,
+                    );
+                    const delayInfo = formatDelay(delay);
+                    return delayInfo.text ? (
+                      <div className={`text-xs ${delayInfo.className}`}>
+                        {delayInfo.text}
+                      </div>
+                    ) : null;
+                  })()}
+                  <div className="text-sm text-gray-600">
+                    {lastLeg.destination.name}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Platform{" "}
+                    {lastLeg.destination.actualTrack ||
+                      lastLeg.destination.plannedTrack ||
+                      "?"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="text-right">
               <div className="text-xl font-bold text-gray-800">
-                {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
+                {Math.floor(trip.plannedDurationInMinutes / 60)}:
+                {(trip.plannedDurationInMinutes % 60)
+                  .toString()
+                  .padStart(2, "0")}
               </div>
               <div className="text-xs text-gray-600">Total journey</div>
             </div>
           </div>
-          
+
           {/* Trip details on separate line */}
           <div className="text-gray-600 text-sm space-y-1">
             {(() => {
@@ -441,63 +672,13 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                   <div className="font-medium">{headerInfo.transferCount}</div>
                   <div className="space-y-1">{headerInfo.transferDetails}</div>
                   {headerInfo.materialInfo && (
-                    <div className="text-ns-blue font-medium text-xs">{headerInfo.materialInfo}</div>
+                    <div className="text-ns-blue font-medium text-xs">
+                      {headerInfo.materialInfo}
+                    </div>
                   )}
                 </>
               );
             })()}
-          </div>
-        </div>
-
-        {/* Trip Overview */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-8 w-full">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-800">
-                {formatTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime)}
-              </div>
-              {(() => {
-                const delay = calculateDelay(firstLeg.origin.plannedDateTime, firstLeg.origin.actualDateTime);
-                const delayInfo = formatDelay(delay);
-                return delayInfo.text ? (
-                  <div className={`text-xs ${delayInfo.className}`}>
-                    {delayInfo.text}
-                  </div>
-                ) : null;
-              })()}
-              <div className="text-sm text-gray-600">{firstLeg.origin.name}</div>
-              <div className="text-xs text-gray-500">
-                Platform {firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
-              </div>
-            </div>
-            <div className="flex-1 relative">
-              <div className="h-px bg-gray-300 relative">
-                <div className={`absolute inset-0 h-full rounded ${getLineColor()}`}></div>
-                {trip.transfers > 0 ? (
-                  <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-yellow-600 bg-white px-1 w-6 h-6" />
-                ) : (
-                  <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-6 h-6" />
-                )}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-800">
-                {formatTime(lastLeg.destination.actualDateTime || lastLeg.destination.plannedDateTime)}
-              </div>
-              {(() => {
-                const delay = calculateDelay(lastLeg.destination.plannedDateTime, lastLeg.destination.actualDateTime);
-                const delayInfo = formatDelay(delay);
-                return delayInfo.text ? (
-                  <div className={`text-xs ${delayInfo.className}`}>
-                    {delayInfo.text}
-                  </div>
-                ) : null;
-              })()}
-              <div className="text-sm text-gray-600">{lastLeg.destination.name}</div>
-              <div className="text-xs text-gray-500">
-                Platform {lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -508,7 +689,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             onClick={() => setShowDetails(!showDetails)}
             className="text-ns-blue hover:bg-ns-light-blue"
           >
-            {showDetails ? 'Hide' : 'Show'} Journey Details
+            {showDetails ? "Hide" : "Show"} Journey Details
           </Button>
         </div>
       </CardContent>
@@ -516,47 +697,64 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       {/* Trip Legs Details */}
       {showDetails && (
         <CardContent className="p-6">
-          <LegDetails 
-          legs={trip.legs} 
-          originalDestination={lastLeg.destination.name}
-          legSeatingData={legSeatingData}
-          legTrainTypes={legTrainTypes}
-          legCarriageData={legCarriageData}
-        />
-          
+          <LegDetails
+            legs={trip.legs}
+            originalDestination={lastLeg.destination.name}
+            legSeatingData={legSeatingData}
+            legTrainTypes={legTrainTypes}
+            legCarriageData={legCarriageData}
+          />
+
           {/* API Call Details Section */}
           <div className="mt-6 border-t pt-4">
-            <button 
+            <button
               onClick={() => setShowApiDetails(!showApiDetails)}
               className="text-sm text-gray-600 hover:text-gray-800 underline mb-2"
             >
-              {showApiDetails ? 'Hide API Call Details' : 'Show API Call Details'}
+              {showApiDetails
+                ? "Hide API Call Details"
+                : "Show API Call Details"}
             </button>
-            
+
             {showApiDetails && apiCallDetails.length > 0 && (
               <div className="space-y-4">
-                <h4 className="font-semibold text-gray-800">Virtual Train API Calls</h4>
+                <h4 className="font-semibold text-gray-800">
+                  Virtual Train API Calls
+                </h4>
                 {apiCallDetails.map((apiCall, index) => (
-                  <div key={index} className="bg-gray-50 p-3 rounded-lg text-sm">
+                  <div
+                    key={index}
+                    className="bg-gray-50 p-3 rounded-lg text-sm"
+                  >
                     <div className="mb-2">
-                      <span className="font-medium text-gray-700">Call #{index + 1}:</span>
-                      <span className="ml-2 text-xs text-gray-500">{apiCall.timestamp}</span>
+                      <span className="font-medium text-gray-700">
+                        Call #{index + 1}:
+                      </span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {apiCall.timestamp}
+                      </span>
                     </div>
-                    
+
                     <div className="mb-2">
                       <span className="font-medium text-gray-700">URL:</span>
-                      <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{apiCall.url}</code>
+                      <code className="ml-2 bg-white px-2 py-1 rounded text-xs">
+                        {apiCall.url}
+                      </code>
                     </div>
-                    
+
                     {apiCall.error && (
                       <div className="mb-2">
                         <span className="font-medium text-red-600">Error:</span>
-                        <span className="ml-2 text-red-600 text-xs">{apiCall.error}</span>
+                        <span className="ml-2 text-red-600 text-xs">
+                          {apiCall.error}
+                        </span>
                       </div>
                     )}
-                    
+
                     <div>
-                      <span className="font-medium text-gray-700">Response:</span>
+                      <span className="font-medium text-gray-700">
+                        Response:
+                      </span>
                       <pre className="bg-white p-2 rounded mt-1 text-xs overflow-auto max-h-32 border">
                         {JSON.stringify(apiCall.response, null, 2)}
                       </pre>
@@ -565,17 +763,16 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 ))}
               </div>
             )}
-            
+
             {showApiDetails && apiCallDetails.length === 0 && (
               <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600">
-                No API calls made yet. Virtual train API calls will appear here when the component loads.
+                No API calls made yet. Virtual train API calls will appear here
+                when the component loads.
               </div>
             )}
           </div>
         </CardContent>
       )}
-
-
     </Card>
   );
 }
