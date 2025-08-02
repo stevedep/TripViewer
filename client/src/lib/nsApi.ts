@@ -69,27 +69,22 @@ export async function searchTrips(params: {
     apiUrl.searchParams.set("lastMileModality", "PUBLIC_TRANSPORT");
   }
   
-  // Add product types to include/exclude specific transport modes
-  // By default include all types: TRAIN, BUS, TRAM, METRO
-  const productTypes = [];
+  // Add disabled transport modalities to exclude specific transport modes
+  const disabledModalities = [];
   
-  // Always include trains for NS trips
-  productTypes.push("TRAIN");
-  
-  // Conditionally add other transport types based on exclusions
-  if (!searchParams.excludeBus) {
-    productTypes.push("BUS");
+  if (searchParams.excludeBus) {
+    disabledModalities.push("BUS");
   }
-  if (!searchParams.excludeTram) {
-    productTypes.push("TRAM");
+  if (searchParams.excludeTram) {
+    disabledModalities.push("TRAM");
   }
-  if (!searchParams.excludeMetro) {
-    productTypes.push("METRO");
+  if (searchParams.excludeMetro) {
+    disabledModalities.push("METRO");
   }
   
-  // Set the productTypes parameter
-  if (productTypes.length > 0) {
-    apiUrl.searchParams.set("productTypes", productTypes.join(","));
+  // Set the disabledTransportModalities parameter
+  if (disabledModalities.length > 0) {
+    apiUrl.searchParams.set("disabledTransportModalities", disabledModalities.join(","));
   }
 
   console.log("Making direct NS API request with travel options:", {
@@ -98,7 +93,7 @@ export async function searchTrips(params: {
     excludeTram: searchParams.excludeTram,
     excludeMetro: searchParams.excludeMetro,
     walkingOnly: searchParams.walkingOnly,
-    productTypes: productTypes.join(",")
+    disabledTransportModalities: disabledModalities.join(",")
   });
 
   try {
