@@ -139,7 +139,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     // Line 1: Transfer count
     const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`;
     
-    // Line 2: Transfer details with each leg on its own line
+    // Line 2: Transfer details with each leg on its own line, including intermediate stops
     const transferParts: React.ReactNode[] = [];
     trip.legs.forEach((leg, index) => {
       // Calculate leg duration
@@ -191,6 +191,23 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             [{legDurationMinutes}min][{modalityType}]
           </div>
         );
+      }
+      
+      // Add intermediate stops for this leg if they exist
+      if (leg.stops && leg.stops.length > 0) {
+        leg.stops.forEach((stop, stopIndex) => {
+          // Only show stops that are not the origin or destination
+          if (stop.name !== leg.origin.name && stop.name !== leg.destination.name) {
+            const stopTime = new Date(stop.actualDateTime || stop.plannedDateTime);
+            const stopDuration = Math.round((stopTime.getTime() - legStart.getTime()) / (1000 * 60));
+            
+            transferParts.push(
+              <div key={`stop-${index}-${stopIndex}`} className="text-sm text-gray-600">
+                [{stopDuration}min][{modalityType}][<span className="font-bold">{stop.name}</span>]
+              </div>
+            );
+          }
+        });
       }
     });
     
