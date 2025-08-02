@@ -313,7 +313,8 @@ export default function AlternativeTripsModal({
                       {isExpanded && (
                         <div className="mt-4 border-t border-gray-200 pt-4">
                           <LegDetails 
-                            trip={trip}
+                            legs={trip.legs}
+                            originalDestination={originalDestination}
                             legSeatingData={legSeatingData}
                             legTrainTypes={legTrainTypes}
                           />
