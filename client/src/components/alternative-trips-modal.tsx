@@ -315,6 +315,13 @@ export default function AlternativeTripsModal({
                             legSeatingData={legSeatingData}
                             legTrainTypes={legTrainTypes}
                           />
+                          {/* Debug info */}
+                          <div className="mt-2 text-xs text-gray-500">
+                            Debug: legTrainTypes keys: {Object.keys(legTrainTypes).join(', ')}<br/>
+                            Debug: legSeatingData keys: {Object.keys(legSeatingData).join(', ')}<br/>
+                            Debug: trip transfers: {trip.transfers}<br/>
+                            Debug: legs: {trip.legs.map(leg => `${leg.product.number}-${leg.destination.stationCode}`).join(', ')}
+                          </div>
                         </div>
                       )}
                     </CardContent>
