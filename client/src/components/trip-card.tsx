@@ -180,9 +180,20 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                           ? ` (${departurePlatform})` 
                           : "";
       
+      // Get departure and arrival times
+      const departureTime = new Date(leg.origin.actualDateTime || leg.origin.plannedDateTime);
+      const arrivalTime = new Date(leg.destination.actualDateTime || leg.destination.plannedDateTime);
+      const formatTime = (date: Date) => date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+      
       transferParts.push(
         <div key={`leg-${index}`} className={`text-sm flex items-center gap-2 p-2 rounded ${modeDetails.bgColor}`}>
+          {/* Start time box */}
+          <div className="bg-white/80 px-2 py-1 rounded text-xs font-mono text-gray-700 min-w-[50px] text-center">
+            {formatTime(departureTime)}
+          </div>
+          
           <span className="text-lg">{modeDetails.icon}</span>
+          
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 font-mono">{legDurationMinutes}min</span>
@@ -192,6 +203,11 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             <div className={`font-bold ${modeDetails.color}`}>
               {leg.destination.name}{platformInfo}
             </div>
+          </div>
+          
+          {/* End time box */}
+          <div className="bg-white/80 px-2 py-1 rounded text-xs font-mono text-gray-700 min-w-[50px] text-center">
+            {formatTime(arrivalTime)}
           </div>
         </div>
       );
