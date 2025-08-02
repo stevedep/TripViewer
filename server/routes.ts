@@ -139,7 +139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "Haarlem",
       "Leiden Centraal",
       "Almere Centrum",
-      "Amersfoort Centraal"
+      "Amersfoort Centraal",
+      "NIBC"
     ];
     
     res.json(stations);
