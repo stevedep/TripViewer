@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Calendar, Clock, Search, Route } from "lucide-react";
+import { MapPin, Calendar, Clock, Search, Route, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,19 +10,129 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { TripSearchSchema, type TripSearch } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { searchStations } from "@/lib/nsApi";
 
 interface TripSearchFormProps {
   onSearch?: (searchData: TripSearch) => void;
 }
 
+// Searchable Station Dropdown Component
+function StationSearchDropdown({ 
+  value, 
+  onValueChange, 
+  placeholder 
+}: { 
+  value: string; 
+  onValueChange: (value: string) => void; 
+  placeholder: string; 
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(value || "");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Get popular stations as fallback
+  const { data: popularStations = [] } = useQuery<string[]>({
+    queryKey: ["/api/stations"],
+  });
+
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (searchQuery.length >= 2) {
+        setIsLoading(true);
+        try {
+          const results = await searchStations(searchQuery);
+          setSuggestions(results);
+        } catch (error) {
+          console.warn("Failed to search stations:", error);
+          setSuggestions([]);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setSuggestions([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectStation = (stationName: string) => {
+    setSearchQuery(stationName);
+    onValueChange(stationName);
+    setIsOpen(false);
+  };
+
+  const displaySuggestions = searchQuery.length >= 2 ? suggestions : popularStations.map(name => ({ naam: name }));
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div className="relative">
+        <Input
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="w-full pr-8"
+        />
+        <ChevronDown 
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 cursor-pointer"
+          onClick={() => setIsOpen(!isOpen)}
+        />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+          {isLoading && (
+            <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+          )}
+          
+          {!isLoading && displaySuggestions.length === 0 && searchQuery.length >= 2 && (
+            <div className="px-3 py-2 text-sm text-gray-500">No stations found</div>
+          )}
+          
+          {!isLoading && displaySuggestions.length === 0 && searchQuery.length < 2 && (
+            <div className="px-3 py-2 text-sm text-gray-500">Type to search stations...</div>
+          )}
+          
+          {!isLoading && displaySuggestions.map((station, index) => (
+            <div
+              key={index}
+              className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm border-b border-gray-100 last:border-b-0"
+              onClick={() => handleSelectStation(station.naam)}
+            >
+              <div className="font-medium">{station.naam}</div>
+              {station.land && (
+                <div className="text-xs text-gray-500">{station.land}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
   const { toast } = useToast();
   const [isSearching, setIsSearching] = useState(false);
-
-  // Fetch available stations
-  const { data: stations = [] } = useQuery<string[]>({
-    queryKey: ["/api/stations"],
-  });
 
   const form = useForm<TripSearch>({
     resolver: zodResolver(TripSearchSchema),
@@ -89,24 +199,17 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
                 name="fromStation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center text-sm font-medium text-gray-700">
-                      <MapPin className="text-green-500 mr-1 w-4 h-4" />
-                      From
+                    <FormLabel className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-ns-blue" />
+                      <span>From</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ns-blue focus:border-ns-blue transition-colors">
-                          <SelectValue placeholder="Select departure station" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {stations.map((station) => (
-                          <SelectItem key={station} value={station}>
-                            {station}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <StationSearchDropdown
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Search departure station..."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -118,24 +221,17 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
                 name="toStation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center text-sm font-medium text-gray-700">
-                      <MapPin className="text-red-500 mr-1 w-4 h-4" />
-                      To
+                    <FormLabel className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-ns-orange" />
+                      <span>To</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ns-blue focus:border-ns-blue transition-colors">
-                          <SelectValue placeholder="Select arrival station" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {stations.map((station) => (
-                          <SelectItem key={station} value={station}>
-                            {station}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <StationSearchDropdown
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Search arrival station..."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -121,3 +121,36 @@ export function getPopularStations(): string[] {
     "NIBC"
   ];
 }
+
+// Station autocomplete API
+export async function searchStations(query: string): Promise<any[]> {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    const response = await fetch(
+      `https://gateway.apiportal.ns.nl/autosuggest-api/locaties?q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'nl',
+          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_NS_API_KEY || '',
+          'X-Caller-Id': 'NS Web',
+          'X-Caller-Version': 'rp-planbar-20250618.14',
+        },
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit'
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data || [];
+  } catch (error) {
+    console.warn(`Error searching stations for "${query}":`, error);
+    return [];
+  }
+}
