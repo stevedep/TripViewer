@@ -146,7 +146,24 @@ export async function searchStations(query: string): Promise<any[]> {
     }
 
     const data = await response.json();
-    return data.payload || [];
+    console.log('NS Places API response for query:', query, data);
+    
+    // Filter to only show train stations (not facilities like toilets, lifts, etc.)
+    const allPlaces = data.payload || [];
+    const stations = allPlaces.filter((place: any) => {
+      // Check if it's a train station by looking for station-specific properties
+      const isStation = place.stationCode || 
+                       place.uicCode || 
+                       place.type === 'Station' ||
+                       (place.locations && place.locations.length > 0) ||
+                       place.namen?.lang; // has multilingual names
+      
+      console.log('Place:', place.name, 'Type:', place.type, 'IsStation:', isStation);
+      return isStation;
+    });
+    
+    console.log('Filtered stations:', stations.length, 'from', allPlaces.length, 'total places');
+    return stations;
   } catch (error) {
     console.warn(`Error searching stations for "${query}":`, error);
     return [];
