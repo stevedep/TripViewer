@@ -139,7 +139,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     // Line 1: Transfer count
     const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`;
     
-    // Line 2: Transfer details in format [place:transfertime:fromstation->tostation]
+    // Line 2: Transfer details in format [place:transfertime:platform(vehicle)->platform(vehicle)]
     const transferParts: React.ReactNode[] = [];
     trip.legs.forEach((leg, index) => {
       if (index === 0) return; // Skip first leg (no transfer)
@@ -147,16 +147,20 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const previousLeg = trip.legs[index - 1];
       const waitingTime = getWaitingTime(index);
       
-      // Transfer station (place where you change trains)
+      // Transfer station (place where you change trains/trams)
       const transferStation = previousLeg.destination.name;
       
-      // From and to stations for this transfer
-      const fromStation = previousLeg.origin.name;
-      const toStation = leg.destination.name;
+      // Get platform/track information and vehicle type
+      const arrivalPlatform = previousLeg.destination.actualTrack || previousLeg.destination.plannedTrack || "?";
+      const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack || "?";
+      
+      // Get vehicle types (train/tram/etc)
+      const previousVehicle = previousLeg.product.type === "TRAM" ? "tram" : "train";
+      const currentVehicle = leg.product.type === "TRAM" ? "tram" : "train";
       
       transferParts.push(
         <span key={index} className="mr-2">
-          [<span className="font-bold">{transferStation}</span>:{waitingTime}min:{fromStation}-&gt;{toStation}]
+          [<span className="font-bold">{transferStation}</span>:{waitingTime}min:{arrivalPlatform}({previousVehicle})-&gt;{departurePlatform}({currentVehicle})]
         </span>
       );
     });
