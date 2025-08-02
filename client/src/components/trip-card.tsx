@@ -139,27 +139,26 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     // Line 1: Transfer count
     const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`;
     
-    // Line 2: Journey details
-    const journeyParts: string[] = [];
+    // Line 2: Transfer details in format [place:transfertime:fromstation->tostation]
+    const transferParts: React.ReactNode[] = [];
     trip.legs.forEach((leg, index) => {
+      if (index === 0) return; // Skip first leg (no transfer)
+      
+      const previousLeg = trip.legs[index - 1];
       const waitingTime = getWaitingTime(index);
       
-      // Get platform information
-      const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack || "?";
-      let platformInfo = departurePlatform;
+      // Transfer station (place where you change trains)
+      const transferStation = previousLeg.destination.name;
       
-      // For transfers (not first leg), show arrival -> departure platform
-      if (index > 0) {
-        const previousLeg = trip.legs[index - 1];
-        const arrivalPlatform = previousLeg.destination.actualTrack || previousLeg.destination.plannedTrack || "?";
-        platformInfo = `${arrivalPlatform} -> ${departurePlatform}`;
-      }
+      // From and to stations for this transfer
+      const fromStation = previousLeg.origin.name;
+      const toStation = leg.destination.name;
       
-      // Add full station name where you get on the train
-      journeyParts.push(`[${leg.origin.name}]`);
-      
-      // Add waiting time and platform info
-      journeyParts.push(`(${waitingTime} min : ${platformInfo})`);
+      transferParts.push(
+        <span key={index} className="mr-2">
+          [<span className="font-bold">{transferStation}</span>:{waitingTime}min:{fromStation}-&gt;{toStation}]
+        </span>
+      );
     });
     
     // Line 3: Material/train info with seating
@@ -179,7 +178,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     
     return {
       transferCount,
-      journeyDetails: journeyParts.join(' - '),
+      transferDetails: transferParts,
       materialInfo: materialParts.join(' - ')
     };
   };
@@ -343,7 +342,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 return (
                   <>
                     <div className="font-medium">{headerInfo.transferCount}</div>
-                    <div>{headerInfo.journeyDetails}</div>
+                    <div className="flex flex-wrap">{headerInfo.transferDetails}</div>
                     <div className="text-ns-blue font-medium">{headerInfo.materialInfo}</div>
                   </>
                 );
