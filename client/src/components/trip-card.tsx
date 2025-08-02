@@ -156,16 +156,35 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk")) modalityType = "walking";
       else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("bus")) modalityType = "bus";
       
-      // Color coding for different transport modes
-      const destinationColorClass = modalityType === "train" ? "text-blue-600" : 
-                                   modalityType === "tram" ? "text-green-600" : 
-                                   modalityType === "bus" ? "text-orange-600" :
-                                   modalityType === "metro" ? "text-purple-600" :
-                                   modalityType === "walking" ? "text-gray-600" : "text-slate-600";
+      // Get transport mode details
+      const getModeDetails = (mode: string) => {
+        switch(mode) {
+          case "train": return { icon: "🚆", color: "text-blue-600", bgColor: "bg-blue-50" };
+          case "tram": return { icon: "🚊", color: "text-green-600", bgColor: "bg-green-50" };
+          case "bus": return { icon: "🚌", color: "text-orange-600", bgColor: "bg-orange-50" };
+          case "metro": return { icon: "🚇", color: "text-purple-600", bgColor: "bg-purple-50" };
+          case "walking": return { icon: "🚶", color: "text-gray-600", bgColor: "bg-gray-50" };
+          default: return { icon: "🚉", color: "text-slate-600", bgColor: "bg-slate-50" };
+        }
+      };
+      
+      const modeDetails = getModeDetails(modalityType);
+      
+      // Get quiet car info for trains
+      const isQuiet = leg.product.displayName?.toLowerCase().includes('stil') || 
+                     leg.product.displayName?.toLowerCase().includes('quiet');
       
       transferParts.push(
-        <div key={`leg-${index}`} className="text-sm">
-          [{legDurationMinutes}min][{modalityType}][<span className={`font-bold ${destinationColorClass}`}>{leg.destination.name}</span>]
+        <div key={`leg-${index}`} className={`text-sm flex items-center gap-2 p-2 rounded ${modeDetails.bgColor}`}>
+          <span className="text-lg">{modeDetails.icon}</span>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 font-mono">{legDurationMinutes}min</span>
+              {isQuiet && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">quiet</span>}
+              <span className={`text-xs ${modeDetails.color} font-medium`}>{modalityType}</span>
+            </div>
+            <div className={`font-bold ${modeDetails.color}`}>{leg.destination.name}</div>
+          </div>
         </div>
       );
       
@@ -196,8 +215,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           }
           
           transferParts.push(
-            <div key={`transfer-${index}`} className="text-sm text-gray-600">
-              [transfer: {waitingTime}min{platformInfo}]
+            <div key={`transfer-${index}`} className="text-xs text-gray-500 ml-8 -mt-1 mb-1">
+              ↻ transfer: {waitingTime}min{platformInfo}
             </div>
           );
         }
