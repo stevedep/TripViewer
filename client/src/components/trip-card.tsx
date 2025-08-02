@@ -174,6 +174,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const isQuiet = leg.product.displayName?.toLowerCase().includes('stil') || 
                      leg.product.displayName?.toLowerCase().includes('quiet');
       
+      // Get departure platform for trains and trams
+      const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack;
+      const platformInfo = (modalityType === "train" || modalityType === "tram") && departurePlatform 
+                          ? ` (${departurePlatform})` 
+                          : "";
+      
       transferParts.push(
         <div key={`leg-${index}`} className={`text-sm flex items-center gap-2 p-2 rounded ${modeDetails.bgColor}`}>
           <span className="text-lg">{modeDetails.icon}</span>
@@ -183,7 +189,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               {isQuiet && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">quiet</span>}
               <span className={`text-xs ${modeDetails.color} font-medium`}>{modalityType}</span>
             </div>
-            <div className={`font-bold ${modeDetails.color}`}>{leg.destination.name}</div>
+            <div className={`font-bold ${modeDetails.color}`}>
+              {leg.destination.name}{platformInfo}
+            </div>
           </div>
         </div>
       );
