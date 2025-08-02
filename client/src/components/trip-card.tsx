@@ -139,30 +139,49 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     // Line 1: Transfer count
     const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`;
     
-    // Line 2: Transfer details in format [place:transfertime:platform(vehicle)->platform(vehicle)]
+    // Line 2: Transfer details with each leg on its own line
     const transferParts: React.ReactNode[] = [];
     trip.legs.forEach((leg, index) => {
-      if (index === 0) return; // Skip first leg (no transfer)
+      // Calculate leg duration
+      const legStart = new Date(leg.origin.actualDateTime || leg.origin.plannedDateTime);
+      const legEnd = new Date(leg.destination.actualDateTime || leg.destination.plannedDateTime);
+      const legDurationMinutes = Math.round((legEnd.getTime() - legStart.getTime()) / (1000 * 60));
       
-      const previousLeg = trip.legs[index - 1];
-      const waitingTime = getWaitingTime(index);
+      // Get modality type
+      let modalityType = "train";
+      if (leg.product.type === "TRAM") modalityType = "tram";
+      else if (leg.product.categoryCode === "WALK") modalityType = "walking";
       
-      // Transfer station (place where you change trains/trams)
-      const transferStation = previousLeg.destination.name;
-      
-      // Get platform/track information and vehicle type
-      const arrivalPlatform = previousLeg.destination.actualTrack || previousLeg.destination.plannedTrack || "?";
-      const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack || "?";
-      
-      // Get vehicle types (train/tram/etc)
-      const previousVehicle = previousLeg.product.type === "TRAM" ? "tram" : "train";
-      const currentVehicle = leg.product.type === "TRAM" ? "tram" : "train";
-      
-      transferParts.push(
-        <span key={index} className="mr-2">
-          [<span className="font-bold">{transferStation}</span>:{waitingTime}min:{arrivalPlatform}({previousVehicle})-&gt;{departurePlatform}({currentVehicle})]
-        </span>
-      );
+      // For transfers (not first leg), show transfer info
+      if (index > 0) {
+        const previousLeg = trip.legs[index - 1];
+        const waitingTime = getWaitingTime(index);
+        const transferStation = previousLeg.destination.name;
+        
+        // Get platform information, only show if available
+        const arrivalPlatform = previousLeg.destination.actualTrack || previousLeg.destination.plannedTrack;
+        const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack;
+        
+        let platformInfo = "";
+        if (arrivalPlatform && departurePlatform) {
+          platformInfo = `${arrivalPlatform}->${departurePlatform}`;
+        } else if (departurePlatform) {
+          platformInfo = departurePlatform;
+        }
+        
+        transferParts.push(
+          <div key={`transfer-${index}`} className="text-sm">
+            [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{transferStation}</span>:{waitingTime}min{platformInfo ? `:${platformInfo}` : ""}]
+          </div>
+        );
+      } else {
+        // First leg
+        transferParts.push(
+          <div key={`leg-${index}`} className="text-sm">
+            [{legDurationMinutes}min][{modalityType}]
+          </div>
+        );
+      }
     });
     
     // Line 3: Material/train info with seating
@@ -346,7 +365,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 return (
                   <>
                     <div className="font-medium">{headerInfo.transferCount}</div>
-                    <div className="flex flex-wrap">{headerInfo.transferDetails}</div>
+                    <div className="space-y-1">{headerInfo.transferDetails}</div>
                     <div className="text-ns-blue font-medium">{headerInfo.materialInfo}</div>
                   </>
                 );
