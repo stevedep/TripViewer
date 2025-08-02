@@ -262,7 +262,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const platformInfo =
         (modalityType === "train" || modalityType === "tram") &&
         departurePlatform
-          ? ` (${departurePlatform})`
+          ? `(${departurePlatform}) `
           : "";
 
       // Get departure and arrival times
@@ -307,8 +307,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 </span>
               </div>
               <div className={`font-bold ${modeDetails.color} truncate`}>
-                {leg.destination.name}
-                {platformInfo}
+                {platformInfo}{leg.destination.name}
               </div>
             </div>
 
