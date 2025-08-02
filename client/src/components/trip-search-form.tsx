@@ -154,7 +154,7 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
   const form = useForm<TripSearch>({
     resolver: zodResolver(TripSearchSchema),
     defaultValues: {
-      fromStation: "Den Haag HS",
+      fromStation: "'s-Gravenhage, Vredespaleis",
       toStation: "Eindhoven Centraal",
       dateTime: new Date().toISOString().slice(0, 16),
       excludeBus: false,
