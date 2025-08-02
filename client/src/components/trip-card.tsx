@@ -147,15 +147,21 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const legEnd = new Date(leg.destination.actualDateTime || leg.destination.plannedDateTime);
       const legDurationMinutes = Math.round((legEnd.getTime() - legStart.getTime()) / (1000 * 60));
       
-      // Get modality type
-      let modalityType = "train";
+      // Get modality type with better detection
+      let modalityType = "train"; // default
       if (leg.product.type === "TRAM") modalityType = "tram";
+      else if (leg.product.type === "BUS" || leg.product.categoryCode === "BUS") modalityType = "bus";
+      else if (leg.product.type === "METRO" || leg.product.categoryCode === "METRO") modalityType = "metro";
       else if (leg.product.categoryCode === "WALK" || leg.product.type === "WALK") modalityType = "walking";
       else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk")) modalityType = "walking";
+      else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("bus")) modalityType = "bus";
       
-      // Show travel time to destination for this leg with color coding
+      // Color coding for different transport modes
       const destinationColorClass = modalityType === "train" ? "text-blue-600" : 
-                                   modalityType === "tram" ? "text-green-600" : "";
+                                   modalityType === "tram" ? "text-green-600" : 
+                                   modalityType === "bus" ? "text-orange-600" :
+                                   modalityType === "metro" ? "text-purple-600" :
+                                   modalityType === "walking" ? "text-gray-600" : "text-slate-600";
       
       transferParts.push(
         <div key={`leg-${index}`} className="text-sm">
@@ -169,8 +175,13 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         const waitingTime = getWaitingTime(index + 1);
         
         // Skip transfer info for walking (no platforms/waiting)
-        const nextModalityType = nextLeg.product.type === "TRAM" ? "tram" : 
-                                nextLeg.product.categoryCode === "WALK" || nextLeg.product.type === "WALK" ? "walking" : "train";
+        let nextModalityType = "train"; // default
+        if (nextLeg.product.type === "TRAM") nextModalityType = "tram";
+        else if (nextLeg.product.type === "BUS" || nextLeg.product.categoryCode === "BUS") nextModalityType = "bus";
+        else if (nextLeg.product.type === "METRO" || nextLeg.product.categoryCode === "METRO") nextModalityType = "metro";
+        else if (nextLeg.product.categoryCode === "WALK" || nextLeg.product.type === "WALK") nextModalityType = "walking";
+        else if (nextLeg.product.displayName && nextLeg.product.displayName.toLowerCase().includes("walk")) nextModalityType = "walking";
+        else if (nextLeg.product.displayName && nextLeg.product.displayName.toLowerCase().includes("bus")) nextModalityType = "bus";
         
         if (nextModalityType !== "walking" && waitingTime > 0) {
           // Get platform information for the transfer
