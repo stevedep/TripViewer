@@ -114,7 +114,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     [key: string]: { first: number; second: number };
   }>({});
   const [legCarriageData, setLegCarriageData] = useState<{
-    [key: string]: { carriageCount: number; bakkenImages: string[] };
+    [key: string]: { carriageCount: number; bakkenImages: string[]; direction?: string };
   }>({});
   const [apiCallDetails, setApiCallDetails] = useState<
     Array<{
@@ -126,6 +126,28 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   >([]);
   const [showApiDetails, setShowApiDetails] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [showCarriageModal, setShowCarriageModal] = useState(false);
+  const [selectedCarriageData, setSelectedCarriageData] = useState<{ 
+    bakkenImages: string[]; 
+    direction?: string; 
+    trainType: string;
+  } | null>(null);
+
+  // Handle train click to show carriage modal
+  const handleTrainClick = (leg: any) => {
+    const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+    const carriageData = legCarriageData[legKey];
+    const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+    
+    if (carriageData && carriageData.bakkenImages.length > 0) {
+      setSelectedCarriageData({
+        bakkenImages: carriageData.bakkenImages,
+        direction: carriageData.direction,
+        trainType: trainType
+      });
+      setShowCarriageModal(true);
+    }
+  };
 
   // No longer need to filter at card level - parent component handles filtering
 
@@ -319,8 +341,22 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                     quiet
                   </span>
                 )}
-                <span className={`text-xs ${modeDetails.color} font-medium`}>
+                <span className={`text-xs ${modeDetails.color} font-medium cursor-pointer hover:underline`}
+                      onClick={() => handleTrainClick(leg)}>
                   {modalityType}
+                  {(() => {
+                    // Add direction indicator for trains
+                    if (modalityType === "train") {
+                      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+                      const carriageData = legCarriageData[legKey];
+                      if (carriageData?.direction === "LINKS") {
+                        return " (←)";
+                      } else if (carriageData?.direction === "RECHTS") {
+                        return " (→)";
+                      }
+                    }
+                    return "";
+                  })()}
                 </span>
               </div>
               <div className={`font-bold ${modeDetails.color} truncate`}>
@@ -483,11 +519,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             return null;
           }
 
-          // Extract seat counts, carriage count, and bakken images from Virtual Train API response
+          // Extract seat counts, carriage count, bakken images, and direction from Virtual Train API response
           let firstClassSeats = 0;
           let secondClassSeats = 0;
           let carriageCount = 0;
           let bakkenImages: string[] = [];
+          let direction = data.rijrichting || null; // Extract direction (LINKS/RECHTS)
 
           if (data.materieeldelen && data.materieeldelen.length > 0) {
             data.materieeldelen.forEach((deel: any) => {
@@ -515,6 +552,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             secondClassSeats: secondClassSeats,
             carriageCount: carriageCount,
             bakkenImages: bakkenImages,
+            direction: direction,
           };
         } catch (error) {
           const errorMessage =
@@ -539,7 +577,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         [key: string]: { first: number; second: number };
       } = {};
       const newCarriageData: {
-        [key: string]: { carriageCount: number; bakkenImages: string[] };
+        [key: string]: { carriageCount: number; bakkenImages: string[]; direction?: string };
       } = {};
 
       results.forEach((result) => {
@@ -552,6 +590,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           newCarriageData[result.legKey] = {
             carriageCount: result.carriageCount || 0,
             bakkenImages: result.bakkenImages || [],
+            direction: result.direction || undefined,
           };
 
           // Emit custom event for the filter to listen to
@@ -794,6 +833,65 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             )}
           </div>
         </CardContent>
+      )}
+
+      {/* Carriage Modal */}
+      {showCarriageModal && selectedCarriageData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
+          <div className="bg-white rounded-lg w-full h-full max-w-none max-h-none overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-800">
+                {selectedCarriageData.trainType} Train Carriages
+                {selectedCarriageData.direction && (
+                  <span className="ml-2 text-sm text-gray-600">
+                    Direction: {selectedCarriageData.direction === "LINKS" ? "← Left" : "→ Right"}
+                  </span>
+                )}
+              </h3>
+              <button
+                onClick={() => setShowCarriageModal(false)}
+                className="text-gray-600 hover:text-gray-800 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body - Full Width Carriage Images */}
+            <div className="flex-1 overflow-auto p-4">
+              <div className="space-y-4">
+                {selectedCarriageData.bakkenImages.map((imageUrl, index) => (
+                  <div key={index} className="relative">
+                    {/* Direction indicator box */}
+                    {selectedCarriageData.direction && (
+                      <>
+                        {selectedCarriageData.direction === "LINKS" && index === 0 && (
+                          <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                            ← Direction
+                          </div>
+                        )}
+                        {selectedCarriageData.direction === "RECHTS" && index === selectedCarriageData.bakkenImages.length - 1 && (
+                          <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                            Direction →
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <img
+                      src={imageUrl}
+                      alt={`Carriage ${index + 1}`}
+                      className="w-full h-auto object-contain rounded border shadow-sm"
+                      style={{ maxHeight: 'none' }}
+                    />
+                    <div className="text-center text-sm text-gray-600 mt-2">
+                      Carriage {index + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </Card>
   );

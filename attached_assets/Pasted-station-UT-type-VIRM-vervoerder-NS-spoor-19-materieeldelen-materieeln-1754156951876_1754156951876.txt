@@ -1,0 +1,154 @@
+station": "UT",
+"type": "VIRM",
+"vervoerder": "NS",
+"spoor": "19",
+"materieeldelen": [
+{
+"materieelnummer": 8733,
+"type": "VIRMm2 VI",
+"faciliteiten": [
+"WIFI",
+"TOILET",
+"STILTE",
+"FIETS",
+"STROOM"
+],
+"afbeelding": "https://vt.ns-mlab.nl/v1/images/virmm2_6.png",
+"breedte": 3376,
+"hoogte": 119,
+"zitplaatsen": {
+"staanplaatsEersteKlas": 0,
+"staanplaatsTweedeKlas": 0,
+"zitplaatsEersteKlas": 98,
+"zitplaatsTweedeKlas": 464,
+"klapstoelEersteKlas": 2,
+"klapstoelTweedeKlas": 3,
+"fietsplekken": 6
+},
+"bakken": [
+{
+"afbeelding": {
+"url": "https://vt.ns-mlab.nl/v1/images/virmm2_6/virmm2_6_1.png",
+"breedte": 1799,
+"hoogte": 300
+}
+},
+{
+"afbeelding": {
+"url": "https://vt.ns-mlab.nl/v1/images/virmm2_6/virmm2_6_2.png",
+"breedte": 1691,
+"hoogte": 300
+}
+},
+{
+"afbeelding": {
+"url": "https://vt.ns-mlab.nl/v1/images/virmm2_6/virmm2_6_3.png",
+"breedte": 1737,
+"hoogte": 300
+}
+},
+{
+"afbeelding": {
+"url": "https://vt.ns-mlab.nl/v1/images/virmm2_6/virmm2_6_4.png",
+"breedte": 1763,
+"hoogte": 300
+}
+},
+{
+"afbeelding": {
+"url": "https://vt.ns-mlab.nl/v1/images/virmm2_6/virmm2_6_5.png",
+"breedte": 1691,
+"hoogte": 300
+}
+},
+{
+"afbeelding": {
+"url": "https://vt.ns-mlab.nl/v1/images/virmm2_6/virmm2_6_6.png",
+"breedte": 1753,
+"hoogte": 300
+}
+}
+]
+}
+],
+"ingekort": false,
+"lengte": 6,
+"lengteInMeters": 161,
+"lengteInPixels": 3376,
+"perronVoorzieningen": [
+{
+"type": "PERRONLETTER",
+"paddingLeft": 499,
+"width": 507,
+"description": "K"
+},
+{
+"type": "PERRONLETTER",
+"paddingLeft": 1007,
+"width": 503,
+"description": "L"
+},
+{
+"type": "TRAP",
+"paddingLeft": 1007,
+"width": 0,
+"description": ""
+},
+{
+"type": "ROLTRAP",
+"paddingLeft": 1308,
+"width": 0,
+"description": ""
+},
+{
+"type": "PERRONLETTER",
+"paddingLeft": 1510,
+"width": 501,
+"description": "M"
+},
+{
+"type": "PERRONLETTER",
+"paddingLeft": 2011,
+"width": 524,
+"description": "N"
+},
+{
+"type": "LIFT",
+"paddingLeft": 2011,
+"width": 0,
+"description": ""
+},
+{
+"type": "PERRONLETTER",
+"paddingLeft": 2535,
+"width": 493,
+"description": "O"
+},
+{
+"type": "ROLTRAP",
+"paddingLeft": 2535,
+"width": 0,
+"description": ""
+},
+{
+"type": "TRAP",
+"paddingLeft": 2854,
+"width": 0,
+"description": ""
+},
+{
+"type": "PERRONLETTER",
+"paddingLeft": 3028,
+"width": 522,
+"description": "P"
+},
+{
+"type": "TRAP",
+"paddingLeft": 3261,
+"width": 0,
+"description": ""
+}
+],
+"bakbord": 6,
+"rijrichting": "LINKS"
+}

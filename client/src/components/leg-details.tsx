@@ -8,7 +8,7 @@ interface LegDetailsProps {
   originalDestination?: string;
   legSeatingData?: { [key: string]: { first: number; second: number } };
   legTrainTypes?: { [key: string]: string };
-  legCarriageData?: { [key: string]: { carriageCount: number; bakkenImages: string[] } };
+  legCarriageData?: { [key: string]: { carriageCount: number; bakkenImages: string[]; direction?: string } };
 }
 
 export default function LegDetails({ legs, originalDestination, legSeatingData, legTrainTypes, legCarriageData }: LegDetailsProps) {
