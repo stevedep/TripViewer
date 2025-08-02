@@ -271,8 +271,8 @@ export default function TripCompactHeader({ trip, legSeatingData, legTrainTypes 
       <div className="font-medium">{transferCount}</div>
       <div className="space-y-1">{transferParts}</div>
       {materialParts.length > 0 && (
-        <div className="bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-          <div className="text-gray-800 font-medium text-sm">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+          <div className="text-blue-800 font-semibold text-sm">
             {materialParts.join(" - ")}
           </div>
         </div>
