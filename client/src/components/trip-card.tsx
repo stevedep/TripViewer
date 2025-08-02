@@ -278,6 +278,18 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           minute: "2-digit",
         });
 
+      // Calculate delays for departure and arrival
+      const departureDelay = calculateDelay(
+        leg.origin.plannedDateTime,
+        leg.origin.actualDateTime,
+      );
+      const arrivalDelay = calculateDelay(
+        leg.destination.plannedDateTime,
+        leg.destination.actualDateTime,
+      );
+      const departureDelayInfo = formatDelay(departureDelay);
+      const arrivalDelayInfo = formatDelay(arrivalDelay);
+
       transferParts.push(
         <div
           key={`leg-${index}`}
@@ -285,9 +297,14 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         >
           {/* Mobile-optimized layout */}
           <div className="flex items-center gap-1 p-2">
-            {/* Start time - smaller on mobile */}
+            {/* Start time with delay info - smaller on mobile */}
             <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
-              {formatTime(departureTime)}
+              <div>{formatTime(departureTime)}</div>
+              {departureDelayInfo.text && (
+                <div className={`text-[10px] ${departureDelayInfo.className}`}>
+                  {departureDelayInfo.text}
+                </div>
+              )}
             </div>
 
             <span className="text-lg flex-shrink-0">{modeDetails.icon}</span>
@@ -311,9 +328,14 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               </div>
             </div>
 
-            {/* End time - smaller on mobile */}
+            {/* End time with delay info - smaller on mobile */}
             <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
-              {formatTime(arrivalTime)}
+              <div>{formatTime(arrivalTime)}</div>
+              {arrivalDelayInfo.text && (
+                <div className={`text-[10px] ${arrivalDelayInfo.className}`}>
+                  {arrivalDelayInfo.text}
+                </div>
+              )}
             </div>
           </div>
         </div>,
@@ -566,8 +588,85 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
       {/* Trip Header */}
       <CardContent className="p-4 border-b border-gray-100">
-        {/* Status and Journey Time - separate lines for mobile */}
+        {/* Start/End times on first line */}
         <div className="mb-3 space-y-2">
+          <div className="flex items-center justify-between">
+            {/* Trip Overview */}
+            <div className="flex items-center space-x-8 w-full">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-800">
+                  {formatTime(
+                    firstLeg.origin.actualDateTime ||
+                      firstLeg.origin.plannedDateTime,
+                  )}
+                </div>
+                {(() => {
+                  const delay = calculateDelay(
+                    firstLeg.origin.plannedDateTime,
+                    firstLeg.origin.actualDateTime,
+                  );
+                  const delayInfo = formatDelay(delay);
+                  return delayInfo.text ? (
+                    <div className={`text-xs ${delayInfo.className}`}>
+                      {delayInfo.text}
+                    </div>
+                  ) : null;
+                })()}
+                <div className="text-sm text-gray-600">
+                  {firstLeg.origin.name}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Platform{" "}
+                  {firstLeg.origin.actualTrack ||
+                    firstLeg.origin.plannedTrack ||
+                    "?"}
+                </div>
+              </div>
+              <div className="flex-1 relative">
+                <div className="h-px bg-gray-300 relative">
+                  <div
+                    className={`absolute inset-0 h-full rounded ${getLineColor()}`}
+                  ></div>
+                  {trip.transfers > 0 ? (
+                    <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-yellow-600 bg-white px-1 w-6 h-6" />
+                  ) : (
+                    <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-6 h-6" />
+                  )}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-800">
+                  {formatTime(
+                    lastLeg.destination.actualDateTime ||
+                      lastLeg.destination.plannedDateTime,
+                  )}
+                </div>
+                {(() => {
+                  const delay = calculateDelay(
+                    lastLeg.destination.plannedDateTime,
+                    lastLeg.destination.actualDateTime,
+                  );
+                  const delayInfo = formatDelay(delay);
+                  return delayInfo.text ? (
+                    <div className={`text-xs ${delayInfo.className}`}>
+                      {delayInfo.text}
+                    </div>
+                  ) : null;
+                })()}
+                <div className="text-sm text-gray-600">
+                  {lastLeg.destination.name}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Platform{" "}
+                  {lastLeg.destination.actualTrack ||
+                    lastLeg.destination.plannedTrack ||
+                    "?"}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Delay status and journey time on second line */}
           <div className="flex items-center justify-between">
             <div
               className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${statusInfo.className}`}
@@ -575,82 +674,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               {statusInfo.icon}
               <span>{statusInfo.text}</span>
             </div>
-            {/* Trip Overview */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-8 w-full">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-800">
-                    {formatTime(
-                      firstLeg.origin.actualDateTime ||
-                        firstLeg.origin.plannedDateTime,
-                    )}
-                  </div>
-                  {(() => {
-                    const delay = calculateDelay(
-                      firstLeg.origin.plannedDateTime,
-                      firstLeg.origin.actualDateTime,
-                    );
-                    const delayInfo = formatDelay(delay);
-                    return delayInfo.text ? (
-                      <div className={`text-xs ${delayInfo.className}`}>
-                        {delayInfo.text}
-                      </div>
-                    ) : null;
-                  })()}
-                  <div className="text-sm text-gray-600">
-                    {firstLeg.origin.name}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Platform{" "}
-                    {firstLeg.origin.actualTrack ||
-                      firstLeg.origin.plannedTrack ||
-                      "?"}
-                  </div>
-                </div>
-                <div className="flex-1 relative">
-                  <div className="h-px bg-gray-300 relative">
-                    <div
-                      className={`absolute inset-0 h-full rounded ${getLineColor()}`}
-                    ></div>
-                    {trip.transfers > 0 ? (
-                      <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-yellow-600 bg-white px-1 w-6 h-6" />
-                    ) : (
-                      <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-6 h-6" />
-                    )}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-800">
-                    {formatTime(
-                      lastLeg.destination.actualDateTime ||
-                        lastLeg.destination.plannedDateTime,
-                    )}
-                  </div>
-                  {(() => {
-                    const delay = calculateDelay(
-                      lastLeg.destination.plannedDateTime,
-                      lastLeg.destination.actualDateTime,
-                    );
-                    const delayInfo = formatDelay(delay);
-                    return delayInfo.text ? (
-                      <div className={`text-xs ${delayInfo.className}`}>
-                        {delayInfo.text}
-                      </div>
-                    ) : null;
-                  })()}
-                  <div className="text-sm text-gray-600">
-                    {lastLeg.destination.name}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Platform{" "}
-                    {lastLeg.destination.actualTrack ||
-                      lastLeg.destination.plannedTrack ||
-                      "?"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="text-right">
               <div className="text-xl font-bold text-gray-800">
                 {Math.floor(trip.plannedDurationInMinutes / 60)}:
