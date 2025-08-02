@@ -9,7 +9,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import LegDetails from "./leg-details";
-import TimeSearchModal from "./time-search-modal";
+import AlternativeTripsModal from "./alternative-trips-modal";
 import { type Trip } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 
@@ -133,16 +133,16 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     direction?: string; 
     trainType: string;
   } | null>(null);
-  const [timeSearchModal, setTimeSearchModal] = useState<{
+  const [modalState, setModalState] = useState<{
     isOpen: boolean;
     fromStation: string;
     toStation: string;
-    dateTime: string;
+    fromDateTime: string;
   }>({
     isOpen: false,
     fromStation: "",
     toStation: "",
-    dateTime: ""
+    fromDateTime: ""
   });
 
   // Handle train click to show carriage modal
@@ -161,7 +161,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     }
   };
 
-  // Handle time click to show search modal
+  // Handle time click to show search modal (same as station click in leg-details)
   const handleTimeClick = (fromStation: string, toStation: string, dateTime: string) => {
     console.log('TripCard handleTimeClick called with:', {
       fromStation,
@@ -169,23 +169,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       dateTime
     });
     
-    setTimeSearchModal({
+    setModalState({
       isOpen: true,
       fromStation,
       toStation,
-      dateTime
+      fromDateTime: dateTime
     });
-  };
-
-  // Handle search from modal
-  const handleSearch = (fromStation: string, toStation: string, dateTime: string) => {
-    window.dispatchEvent(new CustomEvent('tripSearch', {
-      detail: {
-        fromStation,
-        toStation,
-        dateTime
-      }
-    }));
   };
 
   // No longer need to filter at card level - parent component handles filtering
@@ -960,14 +949,14 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         </div>
       )}
 
-      {/* Time Search Modal */}
-      <TimeSearchModal
-        isOpen={timeSearchModal.isOpen}
-        onClose={() => setTimeSearchModal(prev => ({ ...prev, isOpen: false }))}
-        fromStation={timeSearchModal.fromStation}
-        toStation={timeSearchModal.toStation}
-        dateTime={timeSearchModal.dateTime}
-        onSearch={handleSearch}
+      {/* Alternative Trips Modal */}
+      <AlternativeTripsModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+        fromStation={modalState.fromStation}
+        toStation={modalState.toStation}
+        fromDateTime={modalState.fromDateTime}
+        originalDestination={lastLeg.destination.name}
       />
     </Card>
   );
