@@ -373,7 +373,7 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                   {leg.stops.slice(1, -1).map((stop, stopIndex) => (
                     <div key={stop.uicCode || stopIndex} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
                       <div>
-                        <span className="font-medium text-gray-800">{stop.name}</span>
+                        <span className="font-medium text-gray-800">{formatStationWithDestination(stop.name, leg)}</span>
                         <span className="text-xs text-gray-500 ml-2">
                           Platform {stop.actualArrivalTrack || stop.plannedArrivalTrack || "?"}
                         </span>

@@ -320,7 +320,19 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           {/* Mobile-optimized layout */}
           <div className="flex items-center gap-1 p-2">
             {/* Start time with delay info - smaller on mobile */}
-            <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
+            <div 
+              className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
+              onClick={() => {
+                // Trigger trip search from this origin and time
+                window.dispatchEvent(new CustomEvent('tripSearch', {
+                  detail: {
+                    fromStation: leg.origin.name,
+                    toStation: lastLeg.destination.name, // Use original destination
+                    dateTime: leg.origin.actualDateTime || leg.origin.plannedDateTime
+                  }
+                }));
+              }}
+            >
               <div>{formatTime(departureTime)}</div>
               {departureDelayInfo.text && (
                 <div className={`text-[10px] ${departureDelayInfo.className}`}>
@@ -361,11 +373,28 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               </div>
               <div className={`font-bold ${modeDetails.color} truncate`}>
                 {platformInfo}{leg.destination.name}
+                {leg.direction && leg.direction !== leg.destination.name && (
+                  <span className="text-xs text-gray-600 font-normal ml-1">
+                    → {leg.direction}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* End time with delay info - smaller on mobile */}
-            <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
+            <div 
+              className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
+              onClick={() => {
+                // Trigger trip search from this destination and time
+                window.dispatchEvent(new CustomEvent('tripSearch', {
+                  detail: {
+                    fromStation: leg.destination.name,
+                    toStation: lastLeg.destination.name, // Use original destination
+                    dateTime: leg.destination.actualDateTime || leg.destination.plannedDateTime
+                  }
+                }));
+              }}
+            >
               <div>{formatTime(arrivalTime)}</div>
               {arrivalDelayInfo.text && (
                 <div className={`text-[10px] ${arrivalDelayInfo.className}`}>
