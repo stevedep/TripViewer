@@ -13,21 +13,14 @@ export default function TripHeader({ trip, legTrainTypes, legSeatingData }: Trip
   // Build material info with seating data
   const materialParts: string[] = [];
   trip.legs.forEach((leg) => {
-    if (leg.travelType === 'PUBLIC_TRANSPORT') {
-      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-      const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+    if (leg.travelType === 'PUBLIC_TRANSPORT' || leg.travelType === 'PUBLIC_TRANSIT') {
+      const trainNumber = leg.product?.number || (leg as any).productNumber;
+      const destinationCode = leg.destination?.stationCode || (leg as any).destinationCode;
+      const legKey = `${trainNumber}-${destinationCode}`;
+      const trainType = legTrainTypes[legKey] || leg.product?.categoryCode || (leg as any).categoryCode;
       const seatingData = legSeatingData[legKey];
       
-      // Debug logging for trip header
-      console.log('TripHeader - checking leg:', {
-        legKey,
-        trainType,
-        seatingData,
-        productNumber: leg.product.number,
-        destinationCode: leg.destination.stationCode,
-        availableTrainTypes: Object.keys(legTrainTypes),
-        availableSeatingData: Object.keys(legSeatingData)
-      });
+
       
       if (trainType && seatingData && trainType !== "undefined") {
         materialParts.push(

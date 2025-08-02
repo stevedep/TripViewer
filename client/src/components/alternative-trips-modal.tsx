@@ -42,34 +42,16 @@ export default function AlternativeTripsModal({
   useEffect(() => {
     if (!data?.trips || data.trips.length === 0) return;
 
-    console.log('AlternativeTripsModal - received trip data:', data.trips.map(trip => ({
-      transfers: trip.transfers,
-      legs: trip.legs.map(leg => ({
-        travelType: leg.travelType,
-        productNumber: leg.product.number,
-        destinationCode: leg.destination.stationCode,
-        categoryCode: leg.product.categoryCode
-      }))
-    })));
+
 
     const fetchMaterialInfo = async () => {
       const promises = data.trips.slice(0, 5).flatMap((trip: Trip) =>
-        trip.legs.filter(leg => leg.travelType === 'PUBLIC_TRANSPORT').map(async (leg) => {
-          const trainNumber = leg.product.number;
-          const destinationStationCode = leg.destination.stationCode;
+        trip.legs.filter(leg => leg.travelType === 'PUBLIC_TRANSPORT' || leg.travelType === 'PUBLIC_TRANSIT').map(async (leg) => {
+          const trainNumber = leg.product?.number || (leg as any).productNumber;
+          const destinationStationCode = leg.destination?.stationCode || (leg as any).destinationCode;
           const dateTime = leg.origin.plannedDateTime;
           
-          console.log('Virtual Train API - processing leg:', {
-            trainNumber,
-            destinationStationCode,
-            legType: leg.travelType,
-            productCategory: leg.product.categoryCode
-          });
-          
-          if (!trainNumber || !destinationStationCode || trainNumber === 'Unknown') {
-            console.log('Skipping leg due to missing data:', { trainNumber, destinationStationCode });
-            return null;
-          }
+          if (!trainNumber || !destinationStationCode || trainNumber === 'Unknown') return null;
 
           try {
             // For static deployment, make direct call to NS Virtual Train API with seating features
@@ -335,13 +317,6 @@ export default function AlternativeTripsModal({
                             legSeatingData={legSeatingData}
                             legTrainTypes={legTrainTypes}
                           />
-                          {/* Debug info */}
-                          <div className="mt-2 text-xs text-gray-500">
-                            Debug: legTrainTypes keys: {Object.keys(legTrainTypes).join(', ')}<br/>
-                            Debug: legSeatingData keys: {Object.keys(legSeatingData).join(', ')}<br/>
-                            Debug: trip transfers: {trip.transfers}<br/>
-                            Debug: legs: {trip.legs.map(leg => `${leg.product.number}-${leg.destination.stationCode}`).join(', ')}
-                          </div>
                         </div>
                       )}
                     </CardContent>
