@@ -5,7 +5,6 @@ import { searchTrips } from "@/lib/nsApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { type Trip } from "@shared/schema";
-import LegDetails from "./leg-details";
 
 interface AlternativeTripsModalProps {
   isOpen: boolean;
@@ -354,12 +353,56 @@ export default function AlternativeTripsModal({
                       {isExpanded && (
                         <div className="mt-4 border-t border-gray-200 pt-4">
                           <div className="text-sm font-medium text-gray-700 mb-3">Journey Details</div>
-                          <LegDetails 
-                            legs={trip.legs} 
-                            originalDestination={originalDestination}
-                            legSeatingData={legSeatingData}
-                            legTrainTypes={legTrainTypes}
-                          />
+                          <div className="space-y-2">
+                            {trip.legs.map((leg, legIndex) => {
+                              const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+                              const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+                              const seatingData = legSeatingData[legKey];
+                              
+                              // Calculate transfer time if not the first leg
+                              const transferTime = legIndex > 0 ? (() => {
+                                const prevLeg = trip.legs[legIndex - 1];
+                                const arrivalTime = new Date(prevLeg.destination.actualDateTime || prevLeg.destination.plannedDateTime);
+                                const departureTime = new Date(leg.origin.actualDateTime || leg.origin.plannedDateTime);
+                                const diffMinutes = Math.round((departureTime.getTime() - arrivalTime.getTime()) / (1000 * 60));
+                                return diffMinutes > 0 ? diffMinutes : 0;
+                              })() : null;
+                              
+                              return (
+                                <div key={legIndex}>
+                                  {/* Transfer time display */}
+                                  {transferTime !== null && transferTime > 0 && (
+                                    <div className="text-xs text-blue-600 font-medium pl-4 mb-1">
+                                      ⏱ transfer: {transferTime}min
+                                    </div>
+                                  )}
+                                  
+                                  {/* Journey step */}
+                                  <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded text-xs">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="font-medium text-gray-700">
+                                        {formatTime(leg.origin.actualDateTime || leg.origin.plannedDateTime)}
+                                      </span>
+                                      <span className="text-gray-500">
+                                        {leg.travelType === 'PUBLIC_TRANSPORT' ? (
+                                          <span className="text-blue-600">
+                                            {trainType} ({leg.product.number}) {leg.destination.name} → {leg.direction}
+                                          </span>
+                                        ) : (
+                                          <span className="text-gray-600">
+                                            {Math.round(leg.duration / 60)}min {leg.travelType.toLowerCase()}
+                                          </span>
+                                        )}
+                                      </span>
+                                    </div>
+                                    <div className="text-gray-700 font-medium">
+                                      {formatTime(leg.destination.actualDateTime || leg.destination.plannedDateTime)}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </CardContent>
