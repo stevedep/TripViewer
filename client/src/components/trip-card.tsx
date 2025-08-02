@@ -9,6 +9,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import LegDetails from "./leg-details";
+import TimeSearchModal from "./time-search-modal";
 import { type Trip } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 
@@ -132,6 +133,17 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     direction?: string; 
     trainType: string;
   } | null>(null);
+  const [timeSearchModal, setTimeSearchModal] = useState<{
+    isOpen: boolean;
+    fromStation: string;
+    toStation: string;
+    dateTime: string;
+  }>({
+    isOpen: false,
+    fromStation: "",
+    toStation: "",
+    dateTime: ""
+  });
 
   // Handle train click to show carriage modal
   const handleTrainClick = (leg: any) => {
@@ -147,6 +159,27 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       });
       setShowCarriageModal(true);
     }
+  };
+
+  // Handle time click to show search modal
+  const handleTimeClick = (fromStation: string, toStation: string, dateTime: string) => {
+    setTimeSearchModal({
+      isOpen: true,
+      fromStation,
+      toStation,
+      dateTime
+    });
+  };
+
+  // Handle search from modal
+  const handleSearch = (fromStation: string, toStation: string, dateTime: string) => {
+    window.dispatchEvent(new CustomEvent('tripSearch', {
+      detail: {
+        fromStation,
+        toStation,
+        dateTime
+      }
+    }));
   };
 
   // No longer need to filter at card level - parent component handles filtering
@@ -322,16 +355,11 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             {/* Start time with delay info - smaller on mobile */}
             <div 
               className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
-              onClick={() => {
-                // Trigger trip search from this origin and time
-                window.dispatchEvent(new CustomEvent('tripSearch', {
-                  detail: {
-                    fromStation: leg.origin.name,
-                    toStation: lastLeg.destination.name, // Use original destination
-                    dateTime: leg.origin.actualDateTime || leg.origin.plannedDateTime
-                  }
-                }));
-              }}
+              onClick={() => handleTimeClick(
+                leg.origin.name,
+                lastLeg.destination.name,
+                leg.origin.actualDateTime || leg.origin.plannedDateTime
+              )}
             >
               <div>{formatTime(departureTime)}</div>
               {departureDelayInfo.text && (
@@ -384,16 +412,11 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             {/* End time with delay info - smaller on mobile */}
             <div 
               className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
-              onClick={() => {
-                // Trigger trip search from this destination and time
-                window.dispatchEvent(new CustomEvent('tripSearch', {
-                  detail: {
-                    fromStation: leg.destination.name,
-                    toStation: lastLeg.destination.name, // Use original destination
-                    dateTime: leg.destination.actualDateTime || leg.destination.plannedDateTime
-                  }
-                }));
-              }}
+              onClick={() => handleTimeClick(
+                leg.destination.name,
+                lastLeg.destination.name,
+                leg.destination.actualDateTime || leg.destination.plannedDateTime
+              )}
             >
               <div>{formatTime(arrivalTime)}</div>
               {arrivalDelayInfo.text && (
@@ -922,6 +945,16 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           </div>
         </div>
       )}
+
+      {/* Time Search Modal */}
+      <TimeSearchModal
+        isOpen={timeSearchModal.isOpen}
+        onClose={() => setTimeSearchModal(prev => ({ ...prev, isOpen: false }))}
+        fromStation={timeSearchModal.fromStation}
+        toStation={timeSearchModal.toStation}
+        dateTime={timeSearchModal.dateTime}
+        onSearch={handleSearch}
+      />
     </Card>
   );
 }

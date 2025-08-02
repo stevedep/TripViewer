@@ -2,7 +2,7 @@
 
 This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
 
-**Current Status**: Fully functional material type filtering system with static website deployment and comprehensive delay information display - NS API key configured for production deployment (August 1, 2025)
+**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, and clickable time search modals - NS API key configured for production deployment (August 2, 2025)
 
 Key features:
 - Real-time trip search with flexible datetime selection
@@ -12,7 +12,9 @@ Key features:
 - **Transfer filtering** - filter by number of transfers (0, 2, 3+)
 - **Combined filtering** - use both transfer and material type filters simultaneously
 - **Delay information display** - shows exact delay minutes in red text (+X min) for delayed trains
-- **Detailed trip headers** - format: "x transfers - [station code] - (waiting minutes : platform) - material code" 
+- **Detailed trip headers** - format: "x transfers - [station code] - (waiting minutes : platform) - material code"
+- **Clickable time search** - click departure/arrival times to search additional trips from any point in journey with popup modal
+- **Final destination display** - shows train final destinations with arrow notation (→) in transport headers
 - Responsive and user-friendly trip information interface
 - **Static deployment ready** - no server-side components required
 
@@ -32,7 +34,12 @@ Form handling is implemented using React Hook Form with Zod for validation, ensu
 ## Static Website Architecture (Current)
 The application now operates as a static website with all API calls made directly from the frontend. The previous Express.js backend has been replaced with frontend-only services that interact directly with the NS API.
 
-**Key Changes Made (August 1, 2025):**
+**Key Changes Made (August 2, 2025):**
+- **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
+- **Final Destination Display**: Added destination postfix with arrow notation (→) in transport headers
+- **Enhanced Trip Navigation**: All departure and arrival times are now clickable with hover effects
+
+**Previous Changes (August 1, 2025):**
 - Removed server-side proxy pattern for true static deployment
 - Created `client/src/lib/nsApi.ts` for direct NS API integration
 - Updated trip cards to use direct Virtual Train API calls from browser
