@@ -170,11 +170,11 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           platformInfo = departurePlatform;
         }
         
-        // For walking segments, don't show transfer time
+        // For walking segments, show destination but no transfer time
         if (modalityType === "walking") {
           transferParts.push(
             <div key={`transfer-${index}`} className="text-sm">
-              [{legDurationMinutes}min][{modalityType}]
+              [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>]
             </div>
           );
         } else {
