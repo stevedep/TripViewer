@@ -788,8 +788,10 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                   <div className="font-medium">{headerInfo.transferCount}</div>
                   <div className="space-y-1">{headerInfo.transferDetails}</div>
                   {headerInfo.materialInfo && (
-                    <div className="text-ns-blue font-medium text-xs">
-                      {headerInfo.materialInfo}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                      <div className="text-blue-800 font-semibold text-sm">
+                        {headerInfo.materialInfo}
+                      </div>
                     </div>
                   )}
                 </>
