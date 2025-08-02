@@ -165,23 +165,23 @@ export default function AlternativeTripsModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">Alternative Trips</h2>
-            <p className="text-sm text-gray-600">
+        <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Alternative Trips</h2>
+            <p className="text-xs sm:text-sm text-gray-600 truncate">
               From {fromStation} to {originalDestination} starting {formatTime(fromDateTime)}
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0 ml-2">
             <X className="w-5 h-5" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="p-3 sm:p-6 overflow-y-auto max-h-[75vh] sm:max-h-[65vh]">
           {isLoading && (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ns-blue"></div>
@@ -203,12 +203,15 @@ export default function AlternativeTripsModal({
                 
                 return (
                   <Card key={trip.uid} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-6">
+                    <CardContent className="p-3 sm:p-4">
+                      {/* Mobile-first layout: Stack on small screens, side-by-side on larger */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                        
+                        {/* Times and journey line */}
+                        <div className="flex items-center space-x-3 sm:space-x-6 flex-1">
                           {/* Departure */}
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-gray-800">
+                          <div className="text-center flex-shrink-0">
+                            <div className="text-base sm:text-lg font-bold text-gray-800">
                               {formatTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime)}
                             </div>
                             {/* Waiting time */}
@@ -224,16 +227,19 @@ export default function AlternativeTripsModal({
                                 </div>
                               ) : null;
                             })()}
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 hidden sm:block">
                               Platform {firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
+                            </div>
+                            <div className="text-xs text-gray-500 sm:hidden">
+                              P{firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
                             </div>
                           </div>
 
                           {/* Journey line */}
                           <div className="flex-1 relative">
-                            <div className="h-px bg-gray-300 relative min-w-24">
+                            <div className="h-px bg-gray-300 relative min-w-16 sm:min-w-24">
                               <div className="absolute inset-0 h-full rounded bg-ns-blue"></div>
-                              <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-5 h-5" />
+                              <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
                             <div className="text-xs text-gray-500 text-center mt-1">
                               {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''}
@@ -241,8 +247,8 @@ export default function AlternativeTripsModal({
                           </div>
 
                           {/* Arrival */}
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-gray-800">
+                          <div className="text-center flex-shrink-0">
+                            <div className="text-base sm:text-lg font-bold text-gray-800">
                               {formatTime(lastLeg.destination.actualDateTime || lastLeg.destination.plannedDateTime)}
                             </div>
                             {(() => {
@@ -254,62 +260,65 @@ export default function AlternativeTripsModal({
                                 </div>
                               ) : null;
                             })()}
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 hidden sm:block">
                               Platform {lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
+                            </div>
+                            <div className="text-xs text-gray-500 sm:hidden">
+                              P{lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
                             </div>
                           </div>
                         </div>
 
-                        {/* Duration and Material Info */}
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-gray-800">
+                        {/* Duration - separate row on mobile */}
+                        <div className="text-center sm:text-right flex-shrink-0">
+                          <div className="text-base sm:text-lg font-bold text-gray-800">
                             {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
                           </div>
-                          <div className="text-xs text-gray-600 mb-2">Total journey</div>
-                          
-                          {/* Material Information with Performance Data */}
-                          <div className="text-xs text-gray-600 space-y-1">
-                            {trip.legs.map((leg, legIndex) => {
-                              const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-                              const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
-                              const seatingData = legSeatingData[legKey];
-                              
-                              // On-time percentage based on train type
-                              const onTimePercentage = leg.product.categoryCode === 'IC' ? '89%' : 
-                                                     leg.product.categoryCode === 'SPR' ? '94%' : 
-                                                     leg.product.categoryCode === 'ICD' ? '87%' : '92%';
-                              
-                              // Crowdedness based on departure time
-                              const hour = new Date(leg.origin.plannedDateTime).getHours();
-                              const crowdedness = (hour >= 7 && hour <= 9 || hour >= 17 && hour <= 19) ? 'Busy' :
-                                                (hour >= 10 && hour <= 16) ? 'Quiet' : 'Normal';
-                              
-                              return (
-                                <div key={legIndex} className="text-left bg-gray-50 p-2 rounded">
-                                  <div className="flex items-center justify-between mb-1">
-                                    {seatingData ? (
-                                      <span className="text-ns-blue font-medium">
-                                        {trainType} ({seatingData.first} : {seatingData.second})
-                                      </span>
-                                    ) : (
-                                      <span className="text-gray-500">
-                                        {trainType} (? : ?)
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                                      {onTimePercentage} on time
-                                    </span>
-                                    <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                                      {crowdedness}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          <div className="text-xs text-gray-600">Total journey</div>
                         </div>
+                      </div>
+                      
+                      {/* Material Information - Full width on mobile */}
+                      <div className="mt-3 space-y-2">
+                        {trip.legs.map((leg, legIndex) => {
+                          const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+                          const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+                          const seatingData = legSeatingData[legKey];
+                          
+                          // On-time percentage based on train type
+                          const onTimePercentage = leg.product.categoryCode === 'IC' ? '89%' : 
+                                                 leg.product.categoryCode === 'SPR' ? '94%' : 
+                                                 leg.product.categoryCode === 'ICD' ? '87%' : '92%';
+                          
+                          // Crowdedness based on departure time
+                          const hour = new Date(leg.origin.plannedDateTime).getHours();
+                          const crowdedness = (hour >= 7 && hour <= 9 || hour >= 17 && hour <= 19) ? 'Busy' :
+                                            (hour >= 10 && hour <= 16) ? 'Quiet' : 'Normal';
+                          
+                          return (
+                            <div key={legIndex} className="bg-gray-50 p-2 rounded">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                                {seatingData ? (
+                                  <span className="text-xs sm:text-sm text-ns-blue font-medium">
+                                    {trainType} ({seatingData.first} : {seatingData.second})
+                                  </span>
+                                ) : (
+                                  <span className="text-xs sm:text-sm text-gray-500">
+                                    {trainType} (? : ?)
+                                  </span>
+                                )}
+                                <div className="flex items-center space-x-1 sm:space-x-2">
+                                  <span className="bg-green-100 text-green-700 px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium">
+                                    {onTimePercentage} on time
+                                  </span>
+                                  <span className="bg-yellow-100 text-yellow-700 px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium">
+                                    {crowdedness}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
