@@ -139,7 +139,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     // Line 1: Transfer count
     const transferCount = `${trip.transfers} transfer${trip.transfers !== 1 ? 's' : ''}`;
     
-    // Line 2: Transfer details with each leg on its own line, including intermediate stops
+    // Line 2: Travel and transfer details - each leg shows travel to destination, then transfer info
     const transferParts: React.ReactNode[] = [];
     trip.legs.forEach((leg, index) => {
       // Calculate leg duration
@@ -153,45 +153,40 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       else if (leg.product.categoryCode === "WALK" || leg.product.type === "WALK") modalityType = "walking";
       else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk")) modalityType = "walking";
       
-      // For transfers (not first leg), show transfer info
-      if (index > 0) {
-        const previousLeg = trip.legs[index - 1];
-        const waitingTime = getWaitingTime(index);
-        const transferStation = previousLeg.destination.name;
+      // Show travel time to destination for this leg
+      transferParts.push(
+        <div key={`leg-${index}`} className="text-sm">
+          [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>]
+        </div>
+      );
+      
+      // If there's a next leg, show transfer info at this destination
+      if (index < trip.legs.length - 1) {
+        const nextLeg = trip.legs[index + 1];
+        const waitingTime = getWaitingTime(index + 1);
         
-        // Get platform information, only show if available
-        const arrivalPlatform = previousLeg.destination.actualTrack || previousLeg.destination.plannedTrack;
-        const departurePlatform = leg.origin.actualTrack || leg.origin.plannedTrack;
+        // Skip transfer info for walking (no platforms/waiting)
+        const nextModalityType = nextLeg.product.type === "TRAM" ? "tram" : 
+                                nextLeg.product.categoryCode === "WALK" || nextLeg.product.type === "WALK" ? "walking" : "train";
         
-        let platformInfo = "";
-        if (arrivalPlatform && departurePlatform) {
-          platformInfo = `${arrivalPlatform}->${departurePlatform}`;
-        } else if (departurePlatform) {
-          platformInfo = departurePlatform;
-        }
-        
-        // For walking segments, show destination but no transfer time
-        if (modalityType === "walking") {
+        if (nextModalityType !== "walking" && waitingTime > 0) {
+          // Get platform information for the transfer
+          const arrivalPlatform = leg.destination.actualTrack || leg.destination.plannedTrack;
+          const departurePlatform = nextLeg.origin.actualTrack || nextLeg.origin.plannedTrack;
+          
+          let platformInfo = "";
+          if (arrivalPlatform && departurePlatform) {
+            platformInfo = `:${arrivalPlatform}->${departurePlatform}`;
+          } else if (departurePlatform) {
+            platformInfo = `:${departurePlatform}`;
+          }
+          
           transferParts.push(
-            <div key={`transfer-${index}`} className="text-sm">
-              [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>]
+            <div key={`transfer-${index}`} className="text-sm text-gray-600">
+              [transfer: {waitingTime}min{platformInfo}]
             </div>
           );
-        } else {
-          // For transit legs, show the destination of this leg
-          transferParts.push(
-            <div key={`transfer-${index}`} className="text-sm">
-              [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>:{waitingTime}min{platformInfo ? `:${platformInfo}` : ""}]
-            </div>
-          );
         }
-      } else {
-        // First leg - show destination
-        transferParts.push(
-          <div key={`leg-${index}`} className="text-sm">
-            [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>]
-          </div>
-        );
       }
     });
     
