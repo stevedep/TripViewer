@@ -272,11 +272,29 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
                       Departure Date & Time
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="datetime-local"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ns-blue focus:border-ns-blue transition-colors"
-                        {...field}
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          type="datetime-local"
+                          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ns-blue focus:border-ns-blue transition-colors"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="px-3 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                          onClick={() => {
+                            const now = new Date();
+                            // Round to nearest minute for cleaner display
+                            now.setSeconds(0, 0);
+                            const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                              .toISOString()
+                              .slice(0, -1); // Remove 'Z' at the end
+                            field.onChange(localISOTime);
+                          }}
+                        >
+                          Now
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
