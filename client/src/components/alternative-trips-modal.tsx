@@ -42,6 +42,16 @@ export default function AlternativeTripsModal({
   useEffect(() => {
     if (!data?.trips || data.trips.length === 0) return;
 
+    console.log('AlternativeTripsModal - received trip data:', data.trips.map(trip => ({
+      transfers: trip.transfers,
+      legs: trip.legs.map(leg => ({
+        travelType: leg.travelType,
+        productNumber: leg.product.number,
+        destinationCode: leg.destination.stationCode,
+        categoryCode: leg.product.categoryCode
+      }))
+    })));
+
     const fetchMaterialInfo = async () => {
       const promises = data.trips.slice(0, 5).flatMap((trip: Trip) =>
         trip.legs.filter(leg => leg.travelType === 'PUBLIC_TRANSPORT').map(async (leg) => {
@@ -49,7 +59,17 @@ export default function AlternativeTripsModal({
           const destinationStationCode = leg.destination.stationCode;
           const dateTime = leg.origin.plannedDateTime;
           
-          if (!trainNumber || !destinationStationCode || trainNumber === 'Unknown') return null;
+          console.log('Virtual Train API - processing leg:', {
+            trainNumber,
+            destinationStationCode,
+            legType: leg.travelType,
+            productCategory: leg.product.categoryCode
+          });
+          
+          if (!trainNumber || !destinationStationCode || trainNumber === 'Unknown') {
+            console.log('Skipping leg due to missing data:', { trainNumber, destinationStationCode });
+            return null;
+          }
 
           try {
             // For static deployment, make direct call to NS Virtual Train API with seating features
