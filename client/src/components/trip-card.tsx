@@ -163,6 +163,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
   // Handle time click to show search modal
   const handleTimeClick = (fromStation: string, toStation: string, dateTime: string) => {
+    console.log('TripCard handleTimeClick called with:', {
+      fromStation,
+      toStation, 
+      dateTime
+    });
+    
     setTimeSearchModal({
       isOpen: true,
       fromStation,
@@ -355,11 +361,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             {/* Start time with delay info - smaller on mobile */}
             <div 
               className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
-              onClick={() => handleTimeClick(
-                leg.origin.name,
-                lastLeg.destination.name,
-                leg.origin.actualDateTime || leg.origin.plannedDateTime
-              )}
+              onClick={() => {
+                const dateTime = leg.origin.actualDateTime || leg.origin.plannedDateTime;
+                console.log('Departure time clicked - raw dateTime:', dateTime);
+                handleTimeClick(
+                  leg.origin.name,
+                  lastLeg.destination.name,
+                  dateTime
+                );
+              }}
             >
               <div>{formatTime(departureTime)}</div>
               {departureDelayInfo.text && (
@@ -412,11 +422,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             {/* End time with delay info - smaller on mobile */}
             <div 
               className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
-              onClick={() => handleTimeClick(
-                leg.destination.name,
-                lastLeg.destination.name,
-                leg.destination.actualDateTime || leg.destination.plannedDateTime
-              )}
+              onClick={() => {
+                const dateTime = leg.destination.actualDateTime || leg.destination.plannedDateTime;
+                console.log('Arrival time clicked - raw dateTime:', dateTime);
+                handleTimeClick(
+                  leg.destination.name,
+                  lastLeg.destination.name,
+                  dateTime
+                );
+              }}
             >
               <div>{formatTime(arrivalTime)}</div>
               {arrivalDelayInfo.text && (

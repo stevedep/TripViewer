@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Clock, MapPin } from "lucide-react";
 
 interface TimeSearchModalProps {
@@ -22,6 +22,15 @@ export default function TimeSearchModal({
   const [searchToStation, setSearchToStation] = useState(toStation);
   const [searchDateTime, setSearchDateTime] = useState(dateTime);
 
+  // Update state when modal opens with new props
+  useEffect(() => {
+    if (isOpen) {
+      setSearchFromStation(fromStation);
+      setSearchToStation(toStation);
+      setSearchDateTime(dateTime);
+    }
+  }, [isOpen, fromStation, toStation, dateTime]);
+
   if (!isOpen) return null;
 
   const formatDisplayTime = (dateTimeStr: string) => {
@@ -39,9 +48,32 @@ export default function TimeSearchModal({
     }
   };
 
+  const formatInputTime = (dateTimeStr: string) => {
+    try {
+      const date = new Date(dateTimeStr);
+      return date.toISOString().slice(0, 16); // Format for datetime-local input
+    } catch {
+      return '';
+    }
+  };
+
   const handleSearch = () => {
-    onSearch(searchFromStation, searchToStation, searchDateTime);
-    onClose();
+    console.log('TimeSearchModal handleSearch called with:', {
+      fromStation: searchFromStation,
+      toStation: searchToStation,
+      dateTime: searchDateTime
+    });
+    
+    if (searchFromStation && searchToStation && searchDateTime) {
+      onSearch(searchFromStation, searchToStation, searchDateTime);
+      onClose();
+    } else {
+      console.error('TimeSearchModal: Missing required fields', {
+        fromStation: searchFromStation,
+        toStation: searchToStation,
+        dateTime: searchDateTime
+      });
+    }
   };
 
   return (
@@ -114,7 +146,7 @@ export default function TimeSearchModal({
                 <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="datetime-local"
-                  value={searchDateTime.slice(0, 16)} // Remove timezone part for input
+                  value={formatInputTime(searchDateTime)}
                   onChange={(e) => setSearchDateTime(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ns-blue focus:border-transparent"
                 />
