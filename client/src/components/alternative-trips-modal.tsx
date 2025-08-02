@@ -355,8 +355,10 @@ export default function AlternativeTripsModal({
                         <div className="mt-4 border-t border-gray-200 pt-4">
                           <div className="text-sm font-medium text-gray-700 mb-3">Journey Details</div>
                           <LegDetails 
-                            trip={trip} 
+                            legs={trip.legs} 
                             originalDestination={originalDestination}
+                            legSeatingData={legSeatingData}
+                            legTrainTypes={legTrainTypes}
                           />
                         </div>
                       )}
