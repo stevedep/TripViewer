@@ -153,10 +153,13 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       else if (leg.product.categoryCode === "WALK" || leg.product.type === "WALK") modalityType = "walking";
       else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk")) modalityType = "walking";
       
-      // Show travel time to destination for this leg
+      // Show travel time to destination for this leg with color coding
+      const destinationColorClass = modalityType === "train" ? "text-blue-600" : 
+                                   modalityType === "tram" ? "text-green-600" : "";
+      
       transferParts.push(
         <div key={`leg-${index}`} className="text-sm">
-          [{legDurationMinutes}min][{modalityType}][<span className="font-bold">{leg.destination.name}</span>]
+          [{legDurationMinutes}min][{modalityType}][<span className={`font-bold ${destinationColorClass}`}>{leg.destination.name}</span>]
         </div>
       );
       
