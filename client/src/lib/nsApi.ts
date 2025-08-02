@@ -146,24 +146,24 @@ export async function searchStations(query: string): Promise<any[]> {
     }
 
     const data = await response.json();
-    console.log('NS Places API response for query:', query, data);
     
-    // Filter to only show train stations (not facilities like toilets, lifts, etc.)
+    // Filter to only show actual train stations (not facilities within stations)
     const allPlaces = data.payload || [];
     const stations = allPlaces.filter((place: any) => {
-      // Check if it's a train station by looking for station-specific properties
-      const isStation = place.stationCode || 
-                       place.uicCode || 
-                       place.type === 'Station' ||
-                       (place.locations && place.locations.length > 0) ||
-                       place.namen?.lang; // has multilingual names
-      
-      console.log('Place:', place.name, 'Type:', place.type, 'IsStation:', isStation);
-      return isStation;
+      // Only include actual train stations, not facilities
+      return place.type === 'stationV2' && place.name === 'Stations';
     });
     
-    console.log('Filtered stations:', stations.length, 'from', allPlaces.length, 'total places');
-    return stations;
+    // Extract the actual station locations from the filtered results
+    const stationLocations = stations.flatMap((station: any) => 
+      station.locations?.map((location: any) => ({
+        name: location.name,
+        stationCode: location.stationCode,
+        type: 'Station'
+      })) || []
+    );
+    
+    return stationLocations;
   } catch (error) {
     console.warn(`Error searching stations for "${query}":`, error);
     return [];

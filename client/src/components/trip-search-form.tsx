@@ -130,11 +130,8 @@ function StationSearchDropdown({
               onClick={() => handleSelectStation(station.naam || station.name)}
             >
               <div className="font-medium">{station.naam || station.name}</div>
-              {station.land && (
-                <div className="text-xs text-gray-500">{station.land}</div>
-              )}
-              {station.type && (
-                <div className="text-xs text-gray-400">{station.type}</div>
+              {station.stationCode && (
+                <div className="text-xs text-gray-500">{station.stationCode}</div>
               )}
             </div>
           ))}
