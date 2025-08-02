@@ -186,28 +186,31 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       const formatTime = (date: Date) => date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
       
       transferParts.push(
-        <div key={`leg-${index}`} className={`text-sm flex items-center gap-2 p-2 rounded ${modeDetails.bgColor}`}>
-          {/* Start time box */}
-          <div className="bg-white/80 px-2 py-1 rounded text-xs font-mono text-gray-700 min-w-[50px] text-center">
-            {formatTime(departureTime)}
-          </div>
-          
-          <span className="text-lg">{modeDetails.icon}</span>
-          
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 font-mono">{legDurationMinutes}min</span>
-              {isQuiet && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">quiet</span>}
-              <span className={`text-xs ${modeDetails.color} font-medium`}>{modalityType}</span>
+        <div key={`leg-${index}`} className={`text-sm ${modeDetails.bgColor} rounded overflow-hidden`}>
+          {/* Mobile-optimized layout */}
+          <div className="flex items-center gap-1 p-2">
+            {/* Start time - smaller on mobile */}
+            <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
+              {formatTime(departureTime)}
             </div>
-            <div className={`font-bold ${modeDetails.color}`}>
-              {leg.destination.name}{platformInfo}
+            
+            <span className="text-lg flex-shrink-0">{modeDetails.icon}</span>
+            
+            <div className="flex-1 min-w-0 px-1">
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-xs text-gray-500 font-mono">{legDurationMinutes}min</span>
+                {isQuiet && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">quiet</span>}
+                <span className={`text-xs ${modeDetails.color} font-medium`}>{modalityType}</span>
+              </div>
+              <div className={`font-bold ${modeDetails.color} truncate`}>
+                {leg.destination.name}{platformInfo}
+              </div>
             </div>
-          </div>
-          
-          {/* End time box */}
-          <div className="bg-white/80 px-2 py-1 rounded text-xs font-mono text-gray-700 min-w-[50px] text-center">
-            {formatTime(arrivalTime)}
+            
+            {/* End time - smaller on mobile */}
+            <div className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0">
+              {formatTime(arrivalTime)}
+            </div>
           </div>
         </div>
       );
