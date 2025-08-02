@@ -150,7 +150,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       // Get modality type
       let modalityType = "train";
       if (leg.product.type === "TRAM") modalityType = "tram";
-      else if (leg.product.categoryCode === "WALK") modalityType = "walking";
+      else if (leg.product.categoryCode === "WALK" || leg.product.type === "WALK") modalityType = "walking";
+      else if (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk")) modalityType = "walking";
       
       // For transfers (not first leg), show transfer info
       if (index > 0) {
