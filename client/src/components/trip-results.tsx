@@ -313,7 +313,7 @@ export default function TripResults() {
       });
     }
 
-    // Sort trips by arrival time (earliest first)
+    // Sort trips by arrival time (earliest first), then by total journey time (shortest first)
     filteredTrips = [...filteredTrips].sort((a, b) => {
       const getArrivalTime = (trip: any) => {
         const lastLeg = trip.legs[trip.legs.length - 1];
@@ -321,7 +321,18 @@ export default function TripResults() {
         return new Date(arrivalTime).getTime();
       };
       
-      return getArrivalTime(a) - getArrivalTime(b);
+      const arrivalTimeA = getArrivalTime(a);
+      const arrivalTimeB = getArrivalTime(b);
+      
+      // Primary sort: by arrival time
+      if (arrivalTimeA !== arrivalTimeB) {
+        return arrivalTimeA - arrivalTimeB;
+      }
+      
+      // Secondary sort: by total journey time (when arrival times are the same)
+      const journeyTimeA = calculateTravelTime(a);
+      const journeyTimeB = calculateTravelTime(b);
+      return journeyTimeA - journeyTimeB;
     });
 
     // Get unique transfer counts, material types, and travel times for filter options
