@@ -42,6 +42,7 @@ The application now operates as a static website with all API calls made directl
 - **Material Information Fix**: Enhanced fallback display to show basic train types immediately while detailed Virtual Train API data loads
 - **Real-time Filter Updates**: Travel time filtering updates instantly as user drags the slider
 - **Delay Detection Fix**: Fixed false "Delayed" status when planned and actual times are identical - now only shows delayed when there's an actual time difference in minutes
+- **Station Dropdown Cleanup**: Removed NIBC from popular stations dropdown list
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time

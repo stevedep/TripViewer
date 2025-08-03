@@ -177,8 +177,7 @@ export function getPopularStations(): string[] {
     "Haarlem",
     "Leiden Centraal",
     "Almere Centrum",
-    "Amersfoort Centraal",
-    "NIBC"
+    "Amersfoort Centraal"
   ];
 }
 
