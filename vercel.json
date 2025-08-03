@@ -1,0 +1,17 @@
+{
+  "framework": "vite",
+  "buildCommand": "node build-static.js",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "VITE_NS_API_KEY": "@vite_ns_api_key"
+  },
+  "functions": {},
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

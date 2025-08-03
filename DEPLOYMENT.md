@@ -1,30 +1,75 @@
-# Static Deployment Guide
+# Deployment Guide
 
-This Dutch train trip planner has been converted to work as a static website.
+This project can be deployed as a static website since it makes direct API calls to the NS API from the frontend.
 
-## Deployment Configuration
+## Environment Variables
 
-**Update your Replit deployment settings to:**
+Before deploying, make sure to set up the following environment variable:
 
-```
-Deployment Target: Static
-Build Command: node build-static.js
-Public Directory: dist
-```
+- `VITE_NS_API_KEY`: Your NS API subscription key
 
 ## Build Process
 
-The `build-static.js` script will:
-1. Build the frontend using Vite
-2. Move files from `dist/public/` to `dist/` root
-3. Remove server-side components
-4. Create a proper static deployment structure
+To build for static deployment:
 
-## API Integration
+```bash
+node build-static.js
+```
 
-The application now makes direct calls to the NS API from the browser:
-- **NS Trips API**: `gateway.apiportal.ns.nl/reisinformatie-api/api/v3/trips`
-- **NS Virtual Train API**: `gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein`
+This will:
+1. Build the frontend with Vite
+2. Move files from `dist/public` to `dist` root
+3. Clean up server files
+4. Create a static deployment-ready structure
+
+## Vercel Deployment
+
+### Method 1: Using vercel.json (Recommended)
+
+The project includes a `vercel.json` configuration file that handles the deployment automatically:
+
+1. Connect your repository to Vercel
+2. Set the environment variable `VITE_NS_API_KEY` in the Vercel project settings
+3. Deploy - Vercel will use the custom build command from `vercel.json`
+
+### Method 2: Manual Configuration
+
+If needed, you can configure Vercel manually:
+
+1. Framework Preset: Vite
+2. Build Command: `node build-static.js`
+3. Output Directory: `dist`
+4. Install Command: `npm install`
+5. Environment Variables: `VITE_NS_API_KEY`
+
+## Other Static Hosts
+
+The built files in `dist/` can be deployed to any static hosting service:
+- Netlify
+- GitHub Pages
+- Cloudflare Pages
+- Firebase Hosting
+- AWS S3 + CloudFront
+
+Make sure to:
+1. Use `node build-static.js` as the build command
+2. Set the `VITE_NS_API_KEY` environment variable during build
+3. Configure proper redirects for client-side routing (SPA mode)
+
+## Troubleshooting
+
+### Issue: Vercel shows server code instead of the app
+
+This happens when Vercel tries to serve the Express.js files instead of the static frontend. Make sure:
+
+1. The `vercel.json` file is present in the root directory
+2. The build command is set to `node build-static.js`
+3. The output directory is set to `dist`
+4. The `VITE_NS_API_KEY` environment variable is properly configured
+
+### Issue: API calls fail in production
+
+Make sure the `VITE_NS_API_KEY` environment variable is set in your hosting platform's project settings.
 
 ## File Structure After Build
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
-import { mkdirSync, cpSync, rmSync, existsSync } from 'fs';
+import { mkdirSync, cpSync, rmSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 console.log('Building static website...');
@@ -23,27 +23,32 @@ try {
   
   const publicDir = join('dist', 'public');
   if (existsSync(publicDir)) {
-    // Copy all files from dist/public to dist root
-    const files = ['index.html', 'assets'];
+    // Get all files and directories from dist/public
+    const items = readdirSync(publicDir);
     
-    files.forEach(file => {
-      const srcPath = join(publicDir, file);
-      const destPath = join('dist', file);
+    items.forEach(item => {
+      const srcPath = join(publicDir, item);
+      const destPath = join('dist', item);
       
       if (existsSync(srcPath)) {
         cpSync(srcPath, destPath, { recursive: true });
-        console.log(`Moved ${file} to dist root`);
+        console.log(`Moved ${item} to dist root`);
       }
     });
     
-    // Remove the public directory and server files
+    // Remove the public directory
     rmSync(publicDir, { recursive: true, force: true });
+    console.log('Removed public directory');
     
-    // Remove server files if they exist
-    const serverFile = join('dist', 'index.js');
-    if (existsSync(serverFile)) {
-      rmSync(serverFile, { force: true });
-    }
+    // Remove any server files if they exist
+    const serverFiles = ['index.js', 'routes.js', 'server.js'];
+    serverFiles.forEach(file => {
+      const serverFile = join('dist', file);
+      if (existsSync(serverFile)) {
+        rmSync(serverFile, { force: true });
+        console.log(`Removed server file: ${file}`);
+      }
+    });
     
     console.log('Cleaned up build structure');
   }

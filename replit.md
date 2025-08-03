@@ -2,7 +2,7 @@
 
 This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
 
-**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, "Now" button for datetime picker, enhanced material type formatting with styled blue containers, and travel time drag slider filtering - NS API key configured for production deployment (August 3, 2025)
+**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, "Now" button for datetime picker, enhanced material type formatting with styled blue containers, and travel time drag slider filtering - NS API key configured for production deployment with proper Vercel configuration (August 3, 2025)
 
 Key features:
 - Real-time trip search with flexible datetime selection
@@ -43,6 +43,8 @@ The application now operates as a static website with all API calls made directl
 - **Real-time Filter Updates**: Travel time filtering updates instantly as user drags the slider
 - **Delay Detection Fix**: Fixed false "Delayed" status when planned and actual times are identical - now only shows delayed when there's an actual time difference in minutes
 - **Station Dropdown Cleanup**: Removed NIBC from popular stations dropdown list
+- **Vercel Deployment Fix**: Created vercel.json configuration and updated build-static.js to properly structure static deployment
+- **Build Process Enhancement**: Improved static build script to move all files from dist/public to dist root automatically
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
