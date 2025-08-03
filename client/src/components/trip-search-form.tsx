@@ -33,6 +33,11 @@ function StationSearchDropdown({
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Sync searchQuery with external value prop when it changes
+  useEffect(() => {
+    setSearchQuery(value || "");
+  }, [value]);
+
   // Get popular stations as fallback
   const { data: popularStations = [] } = useQuery<string[]>({
     queryKey: ["/api/stations"],
@@ -207,8 +212,18 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
     const currentFrom = form.getValues("fromStation");
     const currentTo = form.getValues("toStation");
     
+    console.log("Swapping stations:", { from: currentFrom, to: currentTo });
+    
     form.setValue("fromStation", currentTo);
     form.setValue("toStation", currentFrom);
+    
+    // Force form to re-render with new values
+    form.trigger(["fromStation", "toStation"]);
+    
+    console.log("After swap:", { 
+      from: form.getValues("fromStation"), 
+      to: form.getValues("toStation") 
+    });
   };
 
   return (
