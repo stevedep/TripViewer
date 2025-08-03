@@ -492,18 +492,21 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       }
     });
 
-    // Line 3: Material/train info with seating - only show if data is available
+    // Line 3: Material/train info with seating - show basic info even if detailed data is loading
     const materialParts: string[] = [];
     trip.legs.forEach((leg, index) => {
       const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
       const trainType = legTrainTypes[legKey];
-
-      // Only add material info if we have both train type and seating data
       const seatingData = legSeatingData[legKey];
+
+      // Show enhanced info if available, otherwise show basic category code
       if (trainType && seatingData && trainType !== "undefined") {
         materialParts.push(
           `${trainType} (${seatingData.first} : ${seatingData.second})`,
         );
+      } else if (leg.product.categoryCode && leg.product.categoryCode !== "undefined") {
+        // Show basic category code while waiting for detailed train type
+        materialParts.push(leg.product.categoryCode);
       }
     });
 

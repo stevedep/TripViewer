@@ -2,7 +2,7 @@
 
 This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
 
-**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, "Now" button for datetime picker, and enhanced material type formatting with styled blue containers - NS API key configured for production deployment (August 2, 2025)
+**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, "Now" button for datetime picker, enhanced material type formatting with styled blue containers, and travel time drag slider filtering - NS API key configured for production deployment (August 3, 2025)
 
 Key features:
 - Real-time trip search with flexible datetime selection
@@ -36,7 +36,13 @@ Form handling is implemented using React Hook Form with Zod for validation, ensu
 ## Static Website Architecture (Current)
 The application now operates as a static website with all API calls made directly from the frontend. The previous Express.js backend has been replaced with frontend-only services that interact directly with the NS API.
 
-**Key Changes Made (August 2, 2025):**
+**Key Changes Made (August 3, 2025):**
+- **Travel Time Drag Slider**: Replaced button-based travel time filter with smooth drag slider interface
+- **Slider Range Optimization**: Starts from 0 minutes with 15-minute increments and extends 15 minutes beyond max trip duration
+- **Material Information Fix**: Enhanced fallback display to show basic train types immediately while detailed Virtual Train API data loads
+- **Real-time Filter Updates**: Travel time filtering updates instantly as user drags the slider
+
+**Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
 - **Final Destination Display**: Added destination postfix with arrow notation (→) in transport headers
 - **Enhanced Trip Navigation**: All departure and arrival times are now clickable with hover effects
