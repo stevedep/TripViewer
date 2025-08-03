@@ -21,6 +21,18 @@ interface TripCardProps {
 export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   const [showDetails, setShowDetails] = useState(false);
 
+  // Calculate delay in minutes
+  const calculateDelay = (
+    plannedDateTime: string,
+    actualDateTime: string | undefined,
+  ): number => {
+    if (!actualDateTime) return 0;
+    const planned = new Date(plannedDateTime);
+    const actual = new Date(actualDateTime);
+    const delayMs = actual.getTime() - planned.getTime();
+    return Math.round(delayMs / (1000 * 60)); // Convert to minutes
+  };
+
   // Calculate delay information
   const getStatusInfo = () => {
     if (trip.status === "CANCELLED") {
@@ -31,12 +43,18 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       };
     }
 
-    // Check if any leg has delays
-    const hasDelays = trip.legs.some(
-      (leg) =>
-        leg.origin.actualDateTime !== leg.origin.plannedDateTime ||
-        leg.destination.actualDateTime !== leg.destination.plannedDateTime,
-    );
+    // Check if any leg has actual delays (more than 0 minutes)
+    const hasDelays = trip.legs.some((leg) => {
+      const departureDelay = calculateDelay(
+        leg.origin.plannedDateTime,
+        leg.origin.actualDateTime,
+      );
+      const arrivalDelay = calculateDelay(
+        leg.destination.plannedDateTime,
+        leg.destination.actualDateTime,
+      );
+      return departureDelay > 0 || arrivalDelay > 0;
+    });
 
     if (hasDelays) {
       return {
@@ -69,18 +87,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  // Calculate delay in minutes
-  const calculateDelay = (
-    plannedDateTime: string,
-    actualDateTime: string | undefined,
-  ): number => {
-    if (!actualDateTime) return 0;
-    const planned = new Date(plannedDateTime);
-    const actual = new Date(actualDateTime);
-    const delayMs = actual.getTime() - planned.getTime();
-    return Math.round(delayMs / (1000 * 60)); // Convert to minutes
   };
 
   // Format delay display

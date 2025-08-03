@@ -41,6 +41,7 @@ The application now operates as a static website with all API calls made directl
 - **Slider Range Optimization**: Starts from 0 minutes with 15-minute increments and extends 15 minutes beyond max trip duration
 - **Material Information Fix**: Enhanced fallback display to show basic train types immediately while detailed Virtual Train API data loads
 - **Real-time Filter Updates**: Travel time filtering updates instantly as user drags the slider
+- **Delay Detection Fix**: Fixed false "Delayed" status when planned and actual times are identical - now only shows delayed when there's an actual time difference in minutes
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
