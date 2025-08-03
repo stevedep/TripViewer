@@ -116,6 +116,32 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return "bg-ns-blue";
   };
 
+  // Get unique travel modalities for the trip
+  const getTravelModalities = () => {
+    const modalities = new Set<string>();
+    
+    trip.legs.forEach((leg) => {
+      if (leg.product.type === "TRAM") {
+        modalities.add("T");
+      } else if (leg.product.type === "BUS" || leg.product.categoryCode === "BUS") {
+        modalities.add("B");
+      } else if (leg.product.type === "METRO" || leg.product.categoryCode === "METRO") {
+        modalities.add("M");
+      } else if (
+        leg.product.categoryCode === "WALK" ||
+        leg.product.type === "WALK" ||
+        (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk"))
+      ) {
+        modalities.add("W");
+      } else {
+        // Default to train for IC, ICD, SPR, etc.
+        modalities.add("TR");
+      }
+    });
+    
+    return Array.from(modalities).sort();
+  };
+
   // State to store train types and seating data for each leg and API call details
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>(
     {},
@@ -729,6 +755,10 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 </div>
               </div>
               <div className="flex-1 relative">
+                {/* Travel Modalities Box */}
+                <div className="absolute top-[-16px] left-1/2 transform -translate-x-1/2 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-xs font-medium text-gray-700 z-10">
+                  {getTravelModalities().join(' ')}
+                </div>
                 <div className="h-px bg-gray-300 relative">
                   <div
                     className={`absolute inset-0 h-full rounded ${getLineColor()}`}
