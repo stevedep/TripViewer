@@ -171,14 +171,19 @@ export default function TripResults() {
     );
   }
 
-  // Function to remove duplicate trips based on uid
+  // Function to remove duplicate trips based on uid and departure time
   const removeDuplicates = (trips: NSApiResponse["trips"]) => {
     const seen = new Set();
     return trips.filter(trip => {
-      if (seen.has(trip.uid)) {
+      // Create a unique key using uid and departure time for more robust deduplication
+      const departureTime = trip.legs[0]?.origin?.plannedDateTime || '';
+      const uniqueKey = `${trip.uid}-${departureTime}`;
+      
+      if (seen.has(uniqueKey)) {
+        console.log(`Removing duplicate trip: ${uniqueKey}`);
         return false;
       }
-      seen.add(trip.uid);
+      seen.add(uniqueKey);
       return true;
     });
   };
@@ -397,24 +402,6 @@ export default function TripResults() {
               </div>
             </div>
           </div>
-          
-          {/* Load More Trips Button */}
-          <div className="mt-3 flex justify-center">
-            <button
-              onClick={loadMoreTrips}
-              disabled={loadingMore}
-              className="px-4 py-2 bg-ns-orange text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              {loadingMore ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Loading more trips...</span>
-                </>
-              ) : (
-                <span>Load More Trips</span>
-              )}
-            </button>
-          </div>
         </div>
 
         {/* Debug information - Hidden by default */}
@@ -445,13 +432,33 @@ export default function TripResults() {
         </div>
 
         {filteredTrips.length > 0 ? (
-          filteredTrips.map((trip, index) => (
-            <TripCard 
-              key={`${trip.uid}-${index}`} 
-              trip={trip} 
-              materialTypeFilter={materialTypeFilter}
-            />
-          ))
+          <>
+            {filteredTrips.map((trip, index) => (
+              <TripCard 
+                key={`${trip.uid}-${index}`} 
+                trip={trip} 
+                materialTypeFilter={materialTypeFilter}
+              />
+            ))}
+            
+            {/* Load More Trips Button */}
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={loadMoreTrips}
+                disabled={loadingMore}
+                className="px-6 py-3 bg-ns-orange text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 font-medium"
+              >
+                {loadingMore ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Loading more trips...</span>
+                  </>
+                ) : (
+                  <span>Load More Trips</span>
+                )}
+              </button>
+            </div>
+          </>
         ) : (
           <Card className="bg-gray-50 border border-gray-200 rounded-lg">
             <CardContent className="p-6 text-center">
