@@ -14,6 +14,7 @@ export default function TripResults() {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [transferFilter, setTransferFilter] = useState<number | null>(null);
   const [materialTypeFilter, setMaterialTypeFilter] = useState<string | null>(null);
+  const [travelTimeFilter, setTravelTimeFilter] = useState<number | null>(null);
   const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [enhancedTrainTypes, setEnhancedTrainTypes] = useState<Set<string>>(new Set());
@@ -29,6 +30,7 @@ export default function TripResults() {
       setAllTrips([]);
       setTransferFilter(null);
       setMaterialTypeFilter(null);
+      setTravelTimeFilter(null);
     };
 
     console.log("TripResults: Adding event listener for tripSearch");
@@ -171,6 +173,21 @@ export default function TripResults() {
     );
   }
 
+  // Function to calculate total travel time in minutes
+  const calculateTravelTime = (trip: any): number => {
+    if (!trip.legs || trip.legs.length === 0) return 0;
+    
+    const firstLeg = trip.legs[0];
+    const lastLeg = trip.legs[trip.legs.length - 1];
+    
+    const departureTime = new Date(firstLeg.origin?.plannedDateTime || firstLeg.origin?.actualDateTime || '');
+    const arrivalTime = new Date(lastLeg.destination?.plannedDateTime || lastLeg.destination?.actualDateTime || '');
+    
+    if (!departureTime || !arrivalTime) return 0;
+    
+    return Math.round((arrivalTime.getTime() - departureTime.getTime()) / (1000 * 60));
+  };
+
   // Function to remove duplicate trips based on uid and departure time
   const removeDuplicates = (trips: NSApiResponse["trips"]) => {
     const seen = new Set();
@@ -277,7 +294,7 @@ export default function TripResults() {
       return enhancedTypes.includes(materialTypeFilter);
     };
 
-    // Filter trips based on both transfer and material type filters
+    // Filter trips based on transfer, material type, and travel time filters
     let filteredTrips = currentTrips;
     
     // Apply transfer filter
@@ -287,10 +304,21 @@ export default function TripResults() {
     
     // Apply material type filter
     filteredTrips = filteredTrips.filter(tripMatchesMaterialFilter);
+    
+    // Apply travel time filter
+    if (travelTimeFilter !== null) {
+      filteredTrips = filteredTrips.filter(trip => {
+        const travelTime = calculateTravelTime(trip);
+        return travelTime <= travelTimeFilter;
+      });
+    }
 
-    // Get unique transfer counts and material types for filter options
+    // Get unique transfer counts, material types, and travel times for filter options
     const transferCounts = Array.from(new Set(currentTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
     const availableMaterialTypes = getAllMaterialTypes(currentTrips);
+    const travelTimes = currentTrips.map(trip => calculateTravelTime(trip)).filter(time => time > 0).sort((a, b) => a - b);
+    const maxTravelTime = travelTimes.length > 0 ? Math.max(...travelTimes) : 0;
+    const minTravelTime = travelTimes.length > 0 ? Math.min(...travelTimes) : 0;
     
     const additionalCount = allTrips.length - (data?.trips?.length || 0);
 
@@ -302,8 +330,8 @@ export default function TripResults() {
             Available Trips
           </h2>
           <div className="text-sm text-gray-600">
-            {(transferFilter !== null || materialTypeFilter !== null) 
-              ? `${filteredTrips.length} of ${currentTrips.length} trips${transferFilter !== null ? ` (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})` : ''}${materialTypeFilter ? ` (${materialTypeFilter})` : ''}`
+            {(transferFilter !== null || materialTypeFilter !== null || travelTimeFilter !== null) 
+              ? `${filteredTrips.length} of ${currentTrips.length} trips${transferFilter !== null ? ` (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})` : ''}${materialTypeFilter ? ` (${materialTypeFilter})` : ''}${travelTimeFilter ? ` (≤${travelTimeFilter}min)` : ''}`
               : `${currentTrips.length} trips found`
             }
             {additionalCount > 0 && (
@@ -316,7 +344,7 @@ export default function TripResults() {
 
         {/* Filters */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             {/* Transfer Filter */}
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -399,6 +427,46 @@ export default function TripResults() {
                     })()})
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Travel Time Filter */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                Filter by Travel Time
+              </h3>
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setTravelTimeFilter(null)}
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      travelTimeFilter === null
+                        ? 'bg-ns-blue text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                    }`}
+                  >
+                    All Times ({currentTrips.length})
+                  </button>
+                  {maxTravelTime > 0 && [120, 180, 240, 300, 360].filter(time => time <= maxTravelTime + 30).map(time => (
+                    <button
+                      key={time}
+                      onClick={() => setTravelTimeFilter(time)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                        travelTimeFilter === time
+                          ? 'bg-ns-blue text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      ≤{Math.floor(time / 60)}h {time % 60 > 0 ? `${time % 60}m` : ''} ({currentTrips.filter(trip => calculateTravelTime(trip) <= time).length})
+                    </button>
+                  ))}
+                </div>
+                {maxTravelTime > 0 && (
+                  <div className="text-xs text-gray-500">
+                    Travel time range: {Math.floor(minTravelTime / 60)}h {minTravelTime % 60}m - {Math.floor(maxTravelTime / 60)}h {maxTravelTime % 60}m
+                  </div>
+                )}
               </div>
             </div>
           </div>
