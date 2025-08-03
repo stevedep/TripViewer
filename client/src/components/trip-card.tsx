@@ -753,6 +753,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                     firstLeg.origin.plannedTrack ||
                     "?"}
                 </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  → {firstLeg.destination.name}
+                </div>
               </div>
               <div className="flex-1 relative">
                 {/* Travel Modalities Box */}

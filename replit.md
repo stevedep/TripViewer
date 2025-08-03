@@ -49,6 +49,7 @@ The application now operates as a static website with all API calls made directl
 - **Collapsible Trip Cards**: Trip card details now collapsed by default with triangle toggle button between delay status and journey time
 - **Smart Trip Sorting**: Trip results sorted by arrival time (earliest first), with secondary sorting by journey time (shortest first) when arrival times are identical
 - **Travel Modality Indicators**: Small box above the arrow showing travel modes used (W=walking, B=bus, T=tram, TR=train, M=metro)
+- **First Leg Destination**: Added destination station for the first trip segment below platform information
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
