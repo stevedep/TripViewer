@@ -47,6 +47,7 @@ The application now operates as a static website with all API calls made directl
 - **Build Process Enhancement**: Improved static build script to move all files from dist/public to dist root automatically
 - **Swap Button Feature**: Added station swap button between From and To fields with smooth ArrowUpDown icon
 - **Collapsible Trip Cards**: Trip card details now collapsed by default with triangle toggle button between delay status and journey time
+- **Arrival Time Sorting**: Trip results now automatically sorted by arrival time with earliest arriving trips displayed first
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time

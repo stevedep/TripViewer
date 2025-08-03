@@ -313,6 +313,17 @@ export default function TripResults() {
       });
     }
 
+    // Sort trips by arrival time (earliest first)
+    filteredTrips = [...filteredTrips].sort((a, b) => {
+      const getArrivalTime = (trip: any) => {
+        const lastLeg = trip.legs[trip.legs.length - 1];
+        const arrivalTime = lastLeg.destination?.actualDateTime || lastLeg.destination?.plannedDateTime;
+        return new Date(arrivalTime).getTime();
+      };
+      
+      return getArrivalTime(a) - getArrivalTime(b);
+    });
+
     // Get unique transfer counts, material types, and travel times for filter options
     const transferCounts = Array.from(new Set(currentTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
     const availableMaterialTypes = getAllMaterialTypes(currentTrips);
