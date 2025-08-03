@@ -436,8 +436,8 @@ export default function TripResults() {
                 <Clock className="w-4 h-4 mr-2" />
                 Filter by Travel Time
               </h3>
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <button
                     onClick={() => setTravelTimeFilter(null)}
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
@@ -446,25 +446,37 @@ export default function TripResults() {
                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
                     }`}
                   >
-                    All Times ({currentTrips.length})
+                    All Times
                   </button>
-                  {maxTravelTime > 0 && [120, 180, 240, 300, 360].filter(time => time <= maxTravelTime + 30).map(time => (
-                    <button
-                      key={time}
-                      onClick={() => setTravelTimeFilter(time)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        travelTimeFilter === time
-                          ? 'bg-ns-blue text-white'
-                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
-                      }`}
-                    >
-                      ≤{Math.floor(time / 60)}h {time % 60 > 0 ? `${time % 60}m` : ''} ({currentTrips.filter(trip => calculateTravelTime(trip) <= time).length})
-                    </button>
-                  ))}
+                  {travelTimeFilter !== null && (
+                    <span className="text-sm text-gray-600">
+                      Max: {Math.floor(travelTimeFilter / 60)}h {travelTimeFilter % 60 > 0 ? `${travelTimeFilter % 60}m` : ''} 
+                      ({currentTrips.filter(trip => calculateTravelTime(trip) <= travelTimeFilter).length} trips)
+                    </span>
+                  )}
                 </div>
+                
                 {maxTravelTime > 0 && (
-                  <div className="text-xs text-gray-500">
-                    Travel time range: {Math.floor(minTravelTime / 60)}h {minTravelTime % 60}m - {Math.floor(maxTravelTime / 60)}h {maxTravelTime % 60}m
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min={minTravelTime}
+                      max={maxTravelTime}
+                      step={15}
+                      value={travelTimeFilter || maxTravelTime}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        setTravelTimeFilter(value === maxTravelTime ? null : value);
+                      }}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #1e40af 0%, #1e40af ${((travelTimeFilter || maxTravelTime) - minTravelTime) / (maxTravelTime - minTravelTime) * 100}%, #e5e7eb ${((travelTimeFilter || maxTravelTime) - minTravelTime) / (maxTravelTime - minTravelTime) * 100}%, #e5e7eb 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>{Math.floor(minTravelTime / 60)}h {minTravelTime % 60}m</span>
+                      <span>{Math.floor(maxTravelTime / 60)}h {maxTravelTime % 60}m</span>
+                    </div>
                   </div>
                 )}
               </div>
