@@ -460,7 +460,7 @@ export default function TripResults() {
                   <div className="space-y-2">
                     <input
                       type="range"
-                      min={minTravelTime}
+                      min={0}
                       max={maxTravelTime}
                       step={15}
                       value={travelTimeFilter || maxTravelTime}
@@ -470,11 +470,11 @@ export default function TripResults() {
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                       style={{
-                        background: `linear-gradient(to right, #1e40af 0%, #1e40af ${((travelTimeFilter || maxTravelTime) - minTravelTime) / (maxTravelTime - minTravelTime) * 100}%, #e5e7eb ${((travelTimeFilter || maxTravelTime) - minTravelTime) / (maxTravelTime - minTravelTime) * 100}%, #e5e7eb 100%)`
+                        background: `linear-gradient(to right, #1e40af 0%, #1e40af ${((travelTimeFilter || maxTravelTime) / maxTravelTime) * 100}%, #e5e7eb ${((travelTimeFilter || maxTravelTime) / maxTravelTime) * 100}%, #e5e7eb 100%)`
                       }}
                     />
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>{Math.floor(minTravelTime / 60)}h {minTravelTime % 60}m</span>
+                      <span>0h 0m</span>
                       <span>{Math.floor(maxTravelTime / 60)}h {maxTravelTime % 60}m</span>
                     </div>
                   </div>
