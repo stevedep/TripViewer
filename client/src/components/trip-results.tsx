@@ -461,21 +461,21 @@ export default function TripResults() {
                     <input
                       type="range"
                       min={0}
-                      max={maxTravelTime}
+                      max={maxTravelTime + 15}
                       step={15}
-                      value={travelTimeFilter || maxTravelTime}
+                      value={travelTimeFilter || (maxTravelTime + 15)}
                       onChange={(e) => {
                         const value = parseInt(e.target.value);
-                        setTravelTimeFilter(value === maxTravelTime ? null : value);
+                        setTravelTimeFilter(value === (maxTravelTime + 15) ? null : value);
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                       style={{
-                        background: `linear-gradient(to right, #1e40af 0%, #1e40af ${((travelTimeFilter || maxTravelTime) / maxTravelTime) * 100}%, #e5e7eb ${((travelTimeFilter || maxTravelTime) / maxTravelTime) * 100}%, #e5e7eb 100%)`
+                        background: `linear-gradient(to right, #1e40af 0%, #1e40af ${((travelTimeFilter || (maxTravelTime + 15)) / (maxTravelTime + 15)) * 100}%, #e5e7eb ${((travelTimeFilter || (maxTravelTime + 15)) / (maxTravelTime + 15)) * 100}%, #e5e7eb 100%)`
                       }}
                     />
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>0h 0m</span>
-                      <span>{Math.floor(maxTravelTime / 60)}h {maxTravelTime % 60}m</span>
+                      <span>{Math.floor((maxTravelTime + 15) / 60)}h {(maxTravelTime + 15) % 60}m</span>
                     </div>
                   </div>
                 )}
