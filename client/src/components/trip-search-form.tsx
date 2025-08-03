@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Calendar, Clock, Search, Route, ChevronDown, Settings, Bus, Car, Train, Footprints } from "lucide-react";
+import { MapPin, Calendar, Clock, Search, Route, ChevronDown, Settings, Bus, Car, Train, Footprints, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -202,7 +202,14 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
     }
   };
 
-  // Removed minimum date restriction to allow any datetime value
+  // Function to swap from and to stations
+  const swapStations = () => {
+    const currentFrom = form.getValues("fromStation");
+    const currentTo = form.getValues("toStation");
+    
+    form.setValue("fromStation", currentTo);
+    form.setValue("toStation", currentFrom);
+  };
 
   return (
     <Card className="bg-white rounded-xl shadow-lg mb-8">
@@ -214,50 +221,65 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* From Station */}
-              <FormField
-                control={form.control}
-                name="fromStation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-ns-blue" />
-                      <span>From</span>
-                    </FormLabel>
-                    <FormControl>
-                      <StationSearchDropdown
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Search departure station..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* From Station */}
+                <FormField
+                  control={form.control}
+                  name="fromStation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center space-x-2">
+                        <MapPin className="w-4 h-4 text-ns-blue" />
+                        <span>From</span>
+                      </FormLabel>
+                      <FormControl>
+                        <StationSearchDropdown
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Search departure station..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {/* To Station */}
-              <FormField
-                control={form.control}
-                name="toStation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-ns-orange" />
-                      <span>To</span>
-                    </FormLabel>
-                    <FormControl>
-                      <StationSearchDropdown
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Search arrival station..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                {/* To Station */}
+                <FormField
+                  control={form.control}
+                  name="toStation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center space-x-2">
+                        <MapPin className="w-4 h-4 text-ns-orange" />
+                        <span>To</span>
+                      </FormLabel>
+                      <FormControl>
+                        <StationSearchDropdown
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Search arrival station..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {/* Swap Button */}
+              <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={swapStations}
+                  className="bg-white hover:bg-gray-50 border-2 border-gray-300 rounded-full p-2 shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <ArrowUpDown className="w-4 h-4 text-gray-600" />
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -45,6 +45,8 @@ The application now operates as a static website with all API calls made directl
 - **Station Dropdown Cleanup**: Removed NIBC from popular stations dropdown list
 - **Vercel Deployment Fix**: Created vercel.json configuration and updated build-static.js to properly structure static deployment
 - **Build Process Enhancement**: Improved static build script to move all files from dist/public to dist root automatically
+- **Swap Button Feature**: Added station swap button between From and To fields with smooth ArrowUpDown icon
+- **Collapsible Trip Cards**: Trip card details now collapsed by default with triangle toggle button between delay status and journey time
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time

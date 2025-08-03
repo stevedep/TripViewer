@@ -5,6 +5,8 @@ import {
   AlertTriangle,
   Train,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ interface TripCardProps {
 
 export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   // Calculate delay in minutes
   const calculateDelay = (
@@ -769,7 +772,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             </div>
           </div>
           
-          {/* Delay status and journey time on second line */}
+          {/* Delay status, collapse triangle, and journey time on second line */}
           <div className="flex items-center justify-between">
             <div
               className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${statusInfo.className}`}
@@ -777,6 +780,19 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               {statusInfo.icon}
               <span>{statusInfo.text}</span>
             </div>
+            
+            {/* Collapse/Expand Triangle */}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="flex items-center justify-center p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              {isCollapsed ? (
+                <ChevronDown className="w-5 h-5 text-gray-600" />
+              ) : (
+                <ChevronUp className="w-5 h-5 text-gray-600" />
+              )}
+            </button>
+            
             <div className="text-right">
               <div className="text-xl font-bold text-gray-800">
                 {Math.floor(trip.plannedDurationInMinutes / 60)}:
@@ -788,37 +804,41 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             </div>
           </div>
 
-          {/* Trip details on separate line */}
-          <div className="text-gray-600 text-sm space-y-1">
-            {(() => {
-              const headerInfo = getDetailedHeader();
-              return (
-                <>
-                  <div className="font-medium">{headerInfo.transferCount}</div>
-                  <div className="space-y-1">{headerInfo.transferDetails}</div>
-                  {headerInfo.materialInfo && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-                      <div className="text-blue-800 font-semibold text-sm">
-                        {headerInfo.materialInfo}
+          {/* Trip details on separate line - collapsible */}
+          {!isCollapsed && (
+            <div className="text-gray-600 text-sm space-y-1">
+              {(() => {
+                const headerInfo = getDetailedHeader();
+                return (
+                  <>
+                    <div className="font-medium">{headerInfo.transferCount}</div>
+                    <div className="space-y-1">{headerInfo.transferDetails}</div>
+                    {headerInfo.materialInfo && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                        <div className="text-blue-800 font-semibold text-sm">
+                          {headerInfo.materialInfo}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
         </div>
 
-        {/* Toggle Details Button */}
-        <div className="mt-4 flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => setShowDetails(!showDetails)}
-            className="text-ns-blue hover:bg-ns-light-blue"
-          >
-            {showDetails ? "Hide" : "Show"} Journey Details
-          </Button>
-        </div>
+        {/* Toggle Details Button - only show when expanded */}
+        {!isCollapsed && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setShowDetails(!showDetails)}
+              className="text-ns-blue hover:bg-ns-light-blue"
+            >
+              {showDetails ? "Hide" : "Show"} Journey Details
+            </Button>
+          </div>
+        )}
       </CardContent>
 
       {/* Trip Legs Details */}
