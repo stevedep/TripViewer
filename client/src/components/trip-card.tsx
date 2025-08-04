@@ -116,30 +116,94 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return "bg-ns-blue";
   };
 
-  // Get unique travel modalities for the trip
+  // Get unique travel modalities for the trip with material details
   const getTravelModalities = () => {
-    const modalities = new Set<string>();
+    const modalities: Array<{
+      type: string;
+      materials?: Array<{ name: string; crowdingLevel: string }>;
+    }> = [];
+    
+    const addedTypes = new Set<string>();
     
     trip.legs.forEach((leg) => {
+      let modalityType = "";
+      
       if (leg.product.type === "TRAM") {
-        modalities.add("T");
+        modalityType = "T";
       } else if (leg.product.type === "BUS" || leg.product.categoryCode === "BUS") {
-        modalities.add("B");
+        modalityType = "B";
       } else if (leg.product.type === "METRO" || leg.product.categoryCode === "METRO") {
-        modalities.add("M");
+        modalityType = "M";
       } else if (
         leg.product.categoryCode === "WALK" ||
         leg.product.type === "WALK" ||
         (leg.product.displayName && leg.product.displayName.toLowerCase().includes("walk"))
       ) {
-        modalities.add("W");
+        modalityType = "W";
       } else {
-        // Default to train for IC, ICD, SPR, etc.
-        modalities.add("TR");
+        // Train modality - collect material types
+        modalityType = "TR";
+      }
+      
+      if (!addedTypes.has(modalityType)) {
+        if (modalityType === "TR") {
+          // Collect train material types with crowding info
+          const trainMaterials: Array<{ name: string; crowdingLevel: string }> = [];
+          
+          trip.legs.forEach((trainLeg) => {
+            if (trainLeg.product.categoryCode && !["WALK", "BUS", "TRAM", "METRO"].includes(trainLeg.product.categoryCode)) {
+              const legKey = `${trainLeg.product.number}-${trainLeg.destination.stationCode}`;
+              const trainType = legTrainTypes[legKey] || trainLeg.product.categoryCode;
+              
+              // Estimate crowding based on multiple factors
+              const seatingData = legSeatingData[legKey];
+              let crowdingLevel = "low"; // Default green
+              
+              if (seatingData) {
+                const totalSeats = seatingData.first + seatingData.second;
+                const currentHour = new Date().getHours();
+                
+                // Base crowding on train capacity and time of day
+                let crowdingScore = 0;
+                
+                // Factor 1: Train capacity (smaller trains tend to be more crowded)
+                if (totalSeats < 200) crowdingScore += 2;
+                else if (totalSeats < 300) crowdingScore += 1;
+                
+                // Factor 2: Time of day (rush hours are more crowded)
+                if ((currentHour >= 7 && currentHour <= 9) || (currentHour >= 17 && currentHour <= 19)) {
+                  crowdingScore += 2; // Rush hour
+                } else if ((currentHour >= 6 && currentHour <= 10) || (currentHour >= 16 && currentHour <= 20)) {
+                  crowdingScore += 1; // Near rush hour
+                }
+                
+                // Factor 3: Train type (IC trains typically more crowded than regional)
+                if (trainType === 'IC' || trainType === 'ICD' || trainType === 'ICNG') {
+                  crowdingScore += 1;
+                }
+                
+                // Determine crowding level based on score
+                if (crowdingScore >= 4) crowdingLevel = "high"; // Red
+                else if (crowdingScore >= 2) crowdingLevel = "medium"; // Orange
+                else crowdingLevel = "low"; // Green
+              }
+              
+              // Avoid duplicates
+              if (!trainMaterials.some(m => m.name === trainType)) {
+                trainMaterials.push({ name: trainType, crowdingLevel });
+              }
+            }
+          });
+          
+          modalities.push({ type: modalityType, materials: trainMaterials });
+        } else {
+          modalities.push({ type: modalityType });
+        }
+        addedTypes.add(modalityType);
       }
     });
     
-    return Array.from(modalities).sort();
+    return modalities;
   };
 
   // State to store train types and seating data for each leg and API call details
@@ -759,8 +823,38 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               </div>
               <div className="flex-1 relative">
                 {/* Travel Modalities Box */}
-                <div className="absolute top-[-16px] left-1/2 transform -translate-x-1/2 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-xs font-medium text-gray-700 z-10">
-                  {getTravelModalities().join(' ')}
+                <div className="absolute top-[-16px] left-1/2 transform -translate-x-1/2 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-xs font-medium text-gray-700 z-10 flex items-center gap-1">
+                  {getTravelModalities().map((modality, index) => (
+                    <span key={index} className="flex items-center">
+                      {modality.type}
+                      {modality.materials && modality.materials.length > 0 && (
+                        <span className="ml-0.5">
+                          (
+                          {modality.materials.map((material, matIndex) => {
+                            const getCrowdingColor = (level: string) => {
+                              switch (level) {
+                                case 'low': return 'text-green-600';
+                                case 'medium': return 'text-orange-600';
+                                case 'high': return 'text-red-600';
+                                default: return 'text-gray-600';
+                              }
+                            };
+                            
+                            return (
+                              <span key={matIndex}>
+                                <span className={getCrowdingColor(material.crowdingLevel)}>
+                                  {material.name}
+                                </span>
+                                {matIndex < modality.materials!.length - 1 && ', '}
+                              </span>
+                            );
+                          })}
+                          )
+                        </span>
+                      )}
+                      {index < getTravelModalities().length - 1 && ' '}
+                    </span>
+                  ))}
                 </div>
                 <div className="h-px bg-gray-300 relative">
                   <div
