@@ -53,6 +53,8 @@ The application now operates as a static website with all API calls made directl
 - **Dynamic Filter Updates**: Filter options update contextually - selecting transfer count shows only available train types for that transfer level, and vice versa
 - **Zero-Count Filter Hiding**: Filter options with zero trips are automatically hidden, showing only viable combinations
 - **Enhanced Train Modality Display**: TR indicators now show material types (VIRM, DDZ, etc.) with authentic NS API crowding colors - green for LOW, orange for MEDIUM, red for HIGH crowding levels
+- **Train Type Exclusion Filter**: New filter to exclude trips containing specific train types, with red borders highlighting ICNG options on both inclusion and exclusion filters
+- **ICNG Visual Warning**: Red border styling for ICNG train options in both filter types to highlight this train type
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time

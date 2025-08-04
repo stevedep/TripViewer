@@ -14,6 +14,7 @@ export default function TripResults() {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [transferFilter, setTransferFilter] = useState<number | null>(null);
   const [materialTypeFilter, setMaterialTypeFilter] = useState<string | null>(null);
+  const [excludeMaterialTypeFilter, setExcludeMaterialTypeFilter] = useState<string | null>(null);
   const [travelTimeFilter, setTravelTimeFilter] = useState<number | null>(null);
   const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -30,6 +31,7 @@ export default function TripResults() {
       setAllTrips([]);
       setTransferFilter(null);
       setMaterialTypeFilter(null);
+      setExcludeMaterialTypeFilter(null);
       setTravelTimeFilter(null);
     };
 
@@ -302,8 +304,13 @@ export default function TripResults() {
       filteredTrips = filteredTrips.filter(trip => trip.transfers === transferFilter);
     }
     
-    // Apply material type filter
+    // Apply material type filter (include filter)
     filteredTrips = filteredTrips.filter(tripMatchesMaterialFilter);
+    
+    // Apply material type exclusion filter (exclude filter)
+    if (excludeMaterialTypeFilter) {
+      filteredTrips = filteredTrips.filter(trip => !tripMatchesSpecificMaterialFilter(trip, excludeMaterialTypeFilter));
+    }
     
     // Apply travel time filter
     if (travelTimeFilter !== null) {
@@ -400,7 +407,7 @@ export default function TripResults() {
 
         {/* Filters */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-4 gap-6">
             {/* Transfer Filter */}
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -501,10 +508,77 @@ export default function TripResults() {
                       className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                         materialTypeFilter === materialType
                           ? 'bg-ns-blue text-white'
-                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                          : `bg-white text-gray-600 hover:bg-gray-100 border ${
+                              materialType === 'ICNG' ? 'border-red-500' : 'border-gray-300'
+                            }`
                       }`}
                     >
                       {materialType} ({countForThisMaterial})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Exclude Train Type Filter */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Exclude Train Type
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setExcludeMaterialTypeFilter(null)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    excludeMaterialTypeFilter === null
+                      ? 'bg-ns-blue text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  Don't Exclude
+                </button>
+                {availableMaterialTypes.map(materialType => {
+                  const baseTrips = transferFilter !== null ? 
+                    currentTrips.filter(trip => trip.transfers === transferFilter) : 
+                    currentTrips;
+                  
+                  const countForThisMaterial = (() => {
+                    // Special case for ICD: count using enhanced data
+                    if (materialType === 'ICD') {
+                      return baseTrips.filter(trip => {
+                        const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+                        return enhancedTypes.includes('ICD');
+                      }).length;
+                    }
+                    // For basic category codes, count by leg category code
+                    if (['IC', 'SPR'].includes(materialType)) {
+                      return baseTrips.filter(trip => 
+                        trip.legs.some(leg => leg.product?.categoryCode === materialType)
+                      ).length;
+                    }
+                    // For enhanced types, count using enhanced data
+                    return baseTrips.filter(trip => {
+                      const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+                      return enhancedTypes.includes(materialType);
+                    }).length;
+                  })();
+                  
+                  // Hide options with zero count (can't exclude what doesn't exist)
+                  if (countForThisMaterial === 0) return null;
+                  
+                  return (
+                    <button
+                      key={materialType}
+                      onClick={() => setExcludeMaterialTypeFilter(materialType)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                        excludeMaterialTypeFilter === materialType
+                          ? 'bg-red-500 text-white'
+                          : `bg-white text-gray-600 hover:bg-gray-100 border ${
+                              materialType === 'ICNG' ? 'border-red-500' : 'border-gray-300'
+                            }`
+                      }`}
+                    >
+                      Exclude {materialType} ({countForThisMaterial})
                     </button>
                   );
                 })}
