@@ -426,6 +426,9 @@ export default function TripResults() {
                     currentTrips;
                   const countForThisTransfer = baseTrips.filter(trip => trip.transfers === count).length;
                   
+                  // Hide options with zero count
+                  if (countForThisTransfer === 0) return null;
+                  
                   return (
                     <button
                       key={count}
@@ -487,6 +490,9 @@ export default function TripResults() {
                       return enhancedTypes.includes(materialType);
                     }).length;
                   })();
+                  
+                  // Hide options with zero count
+                  if (countForThisMaterial === 0) return null;
                   
                   return (
                     <button

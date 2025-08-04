@@ -51,6 +51,7 @@ The application now operates as a static website with all API calls made directl
 - **Travel Modality Indicators**: Small box above the arrow showing travel modes used (W=walking, B=bus, T=tram, TR=train, M=metro)
 - **First Leg Destination**: Added destination station for the first trip segment below platform information
 - **Dynamic Filter Updates**: Filter options update contextually - selecting transfer count shows only available train types for that transfer level, and vice versa
+- **Zero-Count Filter Hiding**: Filter options with zero trips are automatically hidden, showing only viable combinations
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
