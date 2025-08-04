@@ -585,8 +585,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       }
     });
 
-    // Line 3: Material/train info with seating - show basic info even if detailed data is loading
-    const materialParts: string[] = [];
+    // Line 3: Material/train info with seating and crowding - show basic info even if detailed data is loading
+    const materialParts: Array<{text: string, crowdForecast?: string}> = [];
     trip.legs.forEach((leg, index) => {
       const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
       const trainType = legTrainTypes[legKey];
@@ -594,19 +594,23 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
       // Show enhanced info if available, otherwise show basic category code
       if (trainType && seatingData && trainType !== "undefined") {
-        materialParts.push(
-          `${trainType} (${seatingData.first} : ${seatingData.second})`,
-        );
+        materialParts.push({
+          text: `${trainType} (${seatingData.first} : ${seatingData.second})`,
+          crowdForecast: leg.crowdForecast
+        });
       } else if (leg.product.categoryCode && leg.product.categoryCode !== "undefined") {
         // Show basic category code while waiting for detailed train type
-        materialParts.push(leg.product.categoryCode);
+        materialParts.push({
+          text: leg.product.categoryCode,
+          crowdForecast: leg.crowdForecast
+        });
       }
     });
 
     return {
       transferCount,
       transferDetails: transferParts,
-      materialInfo: materialParts.length > 0 ? materialParts.join(" - ") : null,
+      materialParts: materialParts,
     };
   };
 
@@ -934,10 +938,32 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                   <>
                     <div className="font-medium">{headerInfo.transferCount}</div>
                     <div className="space-y-1">{headerInfo.transferDetails}</div>
-                    {headerInfo.materialInfo && (
+                    {headerInfo.materialParts && headerInfo.materialParts.length > 0 && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
                         <div className="text-blue-800 font-semibold text-sm">
-                          {headerInfo.materialInfo}
+                          {headerInfo.materialParts.map((material, index) => {
+                            // Get color based on crowdForecast value
+                            const getCrowdingTextColor = (crowdForecast?: string) => {
+                              if (!crowdForecast) return 'text-gray-600';
+                              const level = crowdForecast.toUpperCase();
+                              switch (level) {
+                                case 'LOW': return 'text-green-600';
+                                case 'MEDIUM': return 'text-black';
+                                case 'HIGH': return 'text-red-600';
+                                case 'UNKNOWN': return 'text-gray-600';
+                                default: return 'text-gray-600';
+                              }
+                            };
+                            
+                            return (
+                              <span key={index}>
+                                <span className={getCrowdingTextColor(material.crowdForecast)}>
+                                  {material.text}
+                                </span>
+                                {index < headerInfo.materialParts!.length - 1 && ' - '}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
