@@ -335,9 +335,43 @@ export default function TripResults() {
       return journeyTimeA - journeyTimeB;
     });
 
-    // Get unique transfer counts, material types, and travel times for filter options
-    const transferCounts = Array.from(new Set(currentTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
-    const availableMaterialTypes = getAllMaterialTypes(currentTrips);
+    // Helper function to check if trip matches a specific material type
+    const tripMatchesSpecificMaterialFilter = (trip: any, materialType: string): boolean => {
+      // Special case for ICD: these trains have categoryCode "IC" but Virtual Train API returns "ICD"
+      if (materialType === 'ICD') {
+        const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+        return enhancedTypes.includes('ICD');
+      }
+      
+      // For basic category codes (IC, SPR), check leg category codes
+      if (['IC', 'SPR'].includes(materialType)) {
+        return trip.legs.some((leg: any) => leg.product?.categoryCode === materialType);
+      }
+      
+      // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
+      const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+      return enhancedTypes.includes(materialType);
+    };
+
+    // Function to get available transfer counts based on current material filter
+    const getAvailableTransferCounts = () => {
+      const baseTrips = materialTypeFilter ? 
+        currentTrips.filter(trip => tripMatchesSpecificMaterialFilter(trip, materialTypeFilter)) : 
+        currentTrips;
+      return Array.from(new Set(baseTrips.map(trip => trip.transfers))).sort((a, b) => a - b);
+    };
+
+    // Function to get available material types based on current transfer filter
+    const getAvailableMaterialTypes = () => {
+      const baseTrips = transferFilter !== null ? 
+        currentTrips.filter(trip => trip.transfers === transferFilter) : 
+        currentTrips;
+      return getAllMaterialTypes(baseTrips);
+    };
+
+    // Get filtered options based on current filters
+    const transferCounts = getAvailableTransferCounts();
+    const availableMaterialTypes = getAvailableMaterialTypes();
     const travelTimes = currentTrips.map(trip => calculateTravelTime(trip)).filter(time => time > 0).sort((a, b) => a - b);
     const maxTravelTime = travelTimes.length > 0 ? Math.max(...travelTimes) : 0;
     const minTravelTime = travelTimes.length > 0 ? Math.min(...travelTimes) : 0;
@@ -382,21 +416,30 @@ export default function TripResults() {
                       : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
                   }`}
                 >
-                  All ({currentTrips.length})
+                  All ({materialTypeFilter ? 
+                    currentTrips.filter(trip => tripMatchesSpecificMaterialFilter(trip, materialTypeFilter)).length : 
+                    currentTrips.length})
                 </button>
-                {transferCounts.map(count => (
-                  <button
-                    key={count}
-                    onClick={() => setTransferFilter(count)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                      transferFilter === count
-                        ? 'bg-ns-blue text-white'
-                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
-                    }`}
-                  >
-                    {count} transfer{count !== 1 ? 's' : ''} ({currentTrips.filter(trip => trip.transfers === count).length})
-                  </button>
-                ))}
+                {transferCounts.map(count => {
+                  const baseTrips = materialTypeFilter ? 
+                    currentTrips.filter(trip => tripMatchesSpecificMaterialFilter(trip, materialTypeFilter)) : 
+                    currentTrips;
+                  const countForThisTransfer = baseTrips.filter(trip => trip.transfers === count).length;
+                  
+                  return (
+                    <button
+                      key={count}
+                      onClick={() => setTransferFilter(count)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                        transferFilter === count
+                          ? 'bg-ns-blue text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      {count} transfer{count !== 1 ? 's' : ''} ({countForThisTransfer})
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -415,40 +458,50 @@ export default function TripResults() {
                       : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
                   }`}
                 >
-                  All Types ({currentTrips.length})
+                  All Types ({transferFilter !== null ? 
+                    currentTrips.filter(trip => trip.transfers === transferFilter).length : 
+                    currentTrips.length})
                 </button>
-                {availableMaterialTypes.map(materialType => (
-                  <button
-                    key={materialType}
-                    onClick={() => setMaterialTypeFilter(materialType)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                      materialTypeFilter === materialType
-                        ? 'bg-ns-blue text-white'
-                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
-                    }`}
-                  >
-                    {materialType} ({(() => {
-                      // Special case for ICD: count using enhanced data
-                      if (materialType === 'ICD') {
-                        return currentTrips.filter(trip => {
-                          const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
-                          return enhancedTypes.includes('ICD');
-                        }).length;
-                      }
-                      // For basic category codes, count by leg category code
-                      if (['IC', 'SPR'].includes(materialType)) {
-                        return currentTrips.filter(trip => 
-                          trip.legs.some(leg => leg.product?.categoryCode === materialType)
-                        ).length;
-                      }
-                      // For enhanced types, count using enhanced data
-                      return currentTrips.filter(trip => {
+                {availableMaterialTypes.map(materialType => {
+                  const baseTrips = transferFilter !== null ? 
+                    currentTrips.filter(trip => trip.transfers === transferFilter) : 
+                    currentTrips;
+                  
+                  const countForThisMaterial = (() => {
+                    // Special case for ICD: count using enhanced data
+                    if (materialType === 'ICD') {
+                      return baseTrips.filter(trip => {
                         const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
-                        return enhancedTypes.includes(materialType);
+                        return enhancedTypes.includes('ICD');
                       }).length;
-                    })()})
-                  </button>
-                ))}
+                    }
+                    // For basic category codes, count by leg category code
+                    if (['IC', 'SPR'].includes(materialType)) {
+                      return baseTrips.filter(trip => 
+                        trip.legs.some(leg => leg.product?.categoryCode === materialType)
+                      ).length;
+                    }
+                    // For enhanced types, count using enhanced data
+                    return baseTrips.filter(trip => {
+                      const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
+                      return enhancedTypes.includes(materialType);
+                    }).length;
+                  })();
+                  
+                  return (
+                    <button
+                      key={materialType}
+                      onClick={() => setMaterialTypeFilter(materialType)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                        materialTypeFilter === materialType
+                          ? 'bg-ns-blue text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      {materialType} ({countForThisMaterial})
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
