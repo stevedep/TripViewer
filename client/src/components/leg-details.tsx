@@ -160,7 +160,20 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-3">
               <div className={`px-3 py-1 rounded-full text-sm font-bold ${getTrainTypeColor(leg.product.categoryCode)}`}>
-                {leg.product.categoryCode} {leg.product.number}
+                <span className={(() => {
+                  // Apply crowding text color based on NS API crowdForecast
+                  if (!leg.crowdForecast) return '';
+                  const level = leg.crowdForecast.toUpperCase();
+                  switch (level) {
+                    case 'LOW': return 'text-green-600';
+                    case 'MEDIUM': return 'text-black';
+                    case 'HIGH': return 'text-red-600';
+                    case 'UNKNOWN': return 'text-gray-600';
+                    default: return '';
+                  }
+                })()}>
+                  {leg.product.categoryCode} {leg.product.number}
+                </span>
               </div>
               {/* On-time percentage - using realistic data based on train type */}
               <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">

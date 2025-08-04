@@ -163,20 +163,23 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 console.log(`Crowding data for ${trainType} train ${trainLeg.product.number}:`, trainLeg.crowdForecast);
                 const crowdForecast = trainLeg.crowdForecast.toUpperCase();
                 
-                // Map NS crowding levels to our color system
+                // Map NS crowding levels to text color classes
                 switch (crowdForecast) {
                   case 'HIGH':
                     crowdingLevel = "high"; // Red
                     break;
                   case 'MEDIUM':
-                    crowdingLevel = "medium"; // Orange
+                    crowdingLevel = "medium"; // Black (as per user requirement)
                     break;
                   case 'LOW':
                     crowdingLevel = "low"; // Green
                     break;
+                  case 'UNKNOWN':
+                    crowdingLevel = "unknown"; // Grey
+                    break;
                   default:
-                    // For UNKNOWN or other values, keep default low (green)
-                    crowdingLevel = "low";
+                    // For other values, default to unknown (grey)
+                    crowdingLevel = "unknown";
                 }
               } else {
                 console.log(`No crowding data for ${trainType} train ${trainLeg.product.number}`);
@@ -832,8 +835,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                             const getCrowdingColor = (level: string) => {
                               switch (level) {
                                 case 'low': return 'text-green-600';
-                                case 'medium': return 'text-orange-600';
+                                case 'medium': return 'text-black';
                                 case 'high': return 'text-red-600';
+                                case 'unknown': return 'text-gray-600';
                                 default: return 'text-gray-600';
                               }
                             };
