@@ -52,7 +52,7 @@ The application now operates as a static website with all API calls made directl
 - **First Leg Destination**: Added destination station for the first trip segment below platform information
 - **Dynamic Filter Updates**: Filter options update contextually - selecting transfer count shows only available train types for that transfer level, and vice versa
 - **Zero-Count Filter Hiding**: Filter options with zero trips are automatically hidden, showing only viable combinations
-- **Enhanced Train Modality Display**: TR indicators now show material types (VIRM, DDZ, etc.) with authentic NS API crowding colors - green for normal/quiet, orange for medium/slightly busy, red for busy/very busy
+- **Enhanced Train Modality Display**: TR indicators now show material types (VIRM, DDZ, etc.) with authentic NS API crowding colors - green for LOW, orange for MEDIUM, red for HIGH crowding levels
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time

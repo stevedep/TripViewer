@@ -165,17 +165,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 // Map NS crowding levels to our color system
                 switch (crowdForecast) {
                   case 'HIGH':
-                  case 'BUSY':
-                  case 'VERY_BUSY':
                     crowdingLevel = "high"; // Red
                     break;
                   case 'MEDIUM':
-                  case 'SLIGHTLY_BUSY':
                     crowdingLevel = "medium"; // Orange
                     break;
                   case 'LOW':
-                  case 'NORMAL':
-                  case 'QUIET':
                     crowdingLevel = "low"; // Green
                     break;
                   default:
