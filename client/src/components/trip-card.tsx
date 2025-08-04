@@ -155,37 +155,33 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               const legKey = `${trainLeg.product.number}-${trainLeg.destination.stationCode}`;
               const trainType = legTrainTypes[legKey] || trainLeg.product.categoryCode;
               
-              // Estimate crowding based on multiple factors
-              const seatingData = legSeatingData[legKey];
+              // Use real crowding data from NS API
               let crowdingLevel = "low"; // Default green
               
-              if (seatingData) {
-                const totalSeats = seatingData.first + seatingData.second;
-                const currentHour = new Date().getHours();
+              // Use real crowding data from NS API
+              if (trainLeg.crowdForecast) {
+                const crowdForecast = trainLeg.crowdForecast.toUpperCase();
                 
-                // Base crowding on train capacity and time of day
-                let crowdingScore = 0;
-                
-                // Factor 1: Train capacity (smaller trains tend to be more crowded)
-                if (totalSeats < 200) crowdingScore += 2;
-                else if (totalSeats < 300) crowdingScore += 1;
-                
-                // Factor 2: Time of day (rush hours are more crowded)
-                if ((currentHour >= 7 && currentHour <= 9) || (currentHour >= 17 && currentHour <= 19)) {
-                  crowdingScore += 2; // Rush hour
-                } else if ((currentHour >= 6 && currentHour <= 10) || (currentHour >= 16 && currentHour <= 20)) {
-                  crowdingScore += 1; // Near rush hour
+                // Map NS crowding levels to our color system
+                switch (crowdForecast) {
+                  case 'HIGH':
+                  case 'BUSY':
+                  case 'VERY_BUSY':
+                    crowdingLevel = "high"; // Red
+                    break;
+                  case 'MEDIUM':
+                  case 'SLIGHTLY_BUSY':
+                    crowdingLevel = "medium"; // Orange
+                    break;
+                  case 'LOW':
+                  case 'NORMAL':
+                  case 'QUIET':
+                    crowdingLevel = "low"; // Green
+                    break;
+                  default:
+                    // For UNKNOWN or other values, keep default low (green)
+                    crowdingLevel = "low";
                 }
-                
-                // Factor 3: Train type (IC trains typically more crowded than regional)
-                if (trainType === 'IC' || trainType === 'ICD' || trainType === 'ICNG') {
-                  crowdingScore += 1;
-                }
-                
-                // Determine crowding level based on score
-                if (crowdingScore >= 4) crowdingLevel = "high"; // Red
-                else if (crowdingScore >= 2) crowdingLevel = "medium"; // Orange
-                else crowdingLevel = "low"; // Green
               }
               
               // Avoid duplicates
