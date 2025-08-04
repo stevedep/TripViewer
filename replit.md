@@ -57,6 +57,8 @@ The application now operates as a static website with all API calls made directl
 - **ICNG Visual Warning**: Red border styling for ICNG train options in both filter types to highlight this train type
 - **Authentic Crowding Display**: Journey details now show exact NS API crowdForecast values (LOW, MEDIUM, HIGH, UNKNOWN) instead of text interpretations
 - **Color-Coded Material Headers**: Material text in trip headers colored by crowding level - green for LOW, black for MEDIUM, red for HIGH, grey for UNKNOWN
+- **Consistent Crowding Colors**: Applied crowding color coding throughout all UI components - journey details train headers, modality indicators between start/end times, and material information sections
+- **Enhanced Journey Details**: Train type and number text in journey details now displays crowding colors based on authentic NS API data
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
