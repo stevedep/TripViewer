@@ -175,9 +175,25 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
               <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
                 {leg.duration?.value || "Unknown duration"}
               </div>
-              {/* Crowdedness indicator - using realistic data based on time and route */}
-              <div className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-medium">
+              {/* Crowdedness indicator - using authentic NS API data */}
+              <div className={`text-xs px-2 py-1 rounded-full font-medium ${
+                leg.crowdForecast && leg.crowdForecast.toUpperCase() === 'HIGH' 
+                  ? 'bg-red-100 text-red-700'
+                  : leg.crowdForecast && leg.crowdForecast.toUpperCase() === 'MEDIUM'
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'bg-green-100 text-green-700'
+              }`}>
                 {(() => {
+                  if (leg.crowdForecast) {
+                    const crowdLevel = leg.crowdForecast.toUpperCase();
+                    switch (crowdLevel) {
+                      case 'HIGH': return 'Busy';
+                      case 'MEDIUM': return 'Busy'; 
+                      case 'LOW': return 'Normal';
+                      default: return 'Normal';
+                    }
+                  }
+                  // Fallback to estimated data if no crowdForecast available
                   const hour = new Date(leg.origin.plannedDateTime).getHours();
                   if (hour >= 7 && hour <= 9 || hour >= 17 && hour <= 19) return 'Busy';
                   if (hour >= 10 && hour <= 16) return 'Quiet';

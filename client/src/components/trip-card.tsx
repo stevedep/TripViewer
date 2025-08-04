@@ -160,6 +160,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               
               // Use real crowding data from NS API
               if (trainLeg.crowdForecast) {
+                console.log(`Crowding data for ${trainType} train ${trainLeg.product.number}:`, trainLeg.crowdForecast);
                 const crowdForecast = trainLeg.crowdForecast.toUpperCase();
                 
                 // Map NS crowding levels to our color system
@@ -177,6 +178,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                     // For UNKNOWN or other values, keep default low (green)
                     crowdingLevel = "low";
                 }
+              } else {
+                console.log(`No crowding data for ${trainType} train ${trainLeg.product.number}`);
               }
               
               // Avoid duplicates
