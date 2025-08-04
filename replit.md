@@ -2,7 +2,7 @@
 
 This is a Dutch train trip planner web application that provides comprehensive journey information using the NS API. The application has been converted to a **static website** deployment approach, making direct API calls from the frontend to the NS (Nederlandse Spoorwegen) API.
 
-**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, "Now" button for datetime picker, enhanced material type formatting with styled blue containers, and travel time drag slider filtering - NS API key configured for production deployment with proper Vercel configuration (August 3, 2025)
+**Current Status**: Fully functional material type filtering system with static website deployment, comprehensive delay information display, clickable time search modals, "Now" button for datetime picker, enhanced material type formatting with styled blue containers, travel time drag slider filtering, and authentic crowdForecast display with color-coded material text - NS API key configured for production deployment with proper Vercel configuration (August 4, 2025)
 
 Key features:
 - Real-time trip search with flexible datetime selection
@@ -55,6 +55,8 @@ The application now operates as a static website with all API calls made directl
 - **Enhanced Train Modality Display**: TR indicators now show material types (VIRM, DDZ, etc.) with authentic NS API crowding colors - green for LOW, orange for MEDIUM, red for HIGH crowding levels
 - **Train Type Exclusion Filter**: New filter to exclude trips containing specific train types, with red borders highlighting ICNG options on both inclusion and exclusion filters
 - **ICNG Visual Warning**: Red border styling for ICNG train options in both filter types to highlight this train type
+- **Authentic Crowding Display**: Journey details now show exact NS API crowdForecast values (LOW, MEDIUM, HIGH, UNKNOWN) instead of text interpretations
+- **Color-Coded Material Headers**: Material text in trip headers colored by crowding level - green for LOW, black for MEDIUM, red for HIGH, grey for UNKNOWN
 
 **Previous Changes (August 2, 2025):**
 - **Clickable Time Search Modal**: Created in-window popup for searching additional trips from any departure/arrival time
