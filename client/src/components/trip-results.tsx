@@ -276,24 +276,28 @@ export default function TripResults() {
       return Array.from(materialTypes).sort();
     };
 
-    // Filter function for material types
-    const tripMatchesMaterialFilter = (trip: any): boolean => {
-      if (!materialTypeFilter) return true;
-      
+    // Helper function to check if trip matches a specific material type
+    const tripMatchesSpecificMaterialFilter = (trip: any, materialType: string): boolean => {
       // Special case for ICD: these trains have categoryCode "IC" but Virtual Train API returns "ICD"
-      if (materialTypeFilter === 'ICD') {
+      if (materialType === 'ICD') {
         const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
         return enhancedTypes.includes('ICD');
       }
       
       // For basic category codes (IC, SPR), check leg category codes
-      if (['IC', 'SPR'].includes(materialTypeFilter)) {
-        return trip.legs.some((leg: any) => leg.product?.categoryCode === materialTypeFilter);
+      if (['IC', 'SPR'].includes(materialType)) {
+        return trip.legs.some((leg: any) => leg.product?.categoryCode === materialType);
       }
       
       // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
       const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
-      return enhancedTypes.includes(materialTypeFilter);
+      return enhancedTypes.includes(materialType);
+    };
+
+    // Filter function for material types
+    const tripMatchesMaterialFilter = (trip: any): boolean => {
+      if (!materialTypeFilter) return true;
+      return tripMatchesSpecificMaterialFilter(trip, materialTypeFilter);
     };
 
     // Filter trips based on transfer, material type, and travel time filters
@@ -341,24 +345,6 @@ export default function TripResults() {
       const journeyTimeB = calculateTravelTime(b);
       return journeyTimeA - journeyTimeB;
     });
-
-    // Helper function to check if trip matches a specific material type
-    const tripMatchesSpecificMaterialFilter = (trip: any, materialType: string): boolean => {
-      // Special case for ICD: these trains have categoryCode "IC" but Virtual Train API returns "ICD"
-      if (materialType === 'ICD') {
-        const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
-        return enhancedTypes.includes('ICD');
-      }
-      
-      // For basic category codes (IC, SPR), check leg category codes
-      if (['IC', 'SPR'].includes(materialType)) {
-        return trip.legs.some((leg: any) => leg.product?.categoryCode === materialType);
-      }
-      
-      // For enhanced train types (ICNG, VIRM, DDZ, Flirt, SNG), check enhanced data
-      const enhancedTypes = tripEnhancedTypes[trip.uid] || [];
-      return enhancedTypes.includes(materialType);
-    };
 
     // Function to get available transfer counts based on current material filter
     const getAvailableTransferCounts = () => {
