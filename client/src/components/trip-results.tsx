@@ -16,6 +16,8 @@ export default function TripResults() {
   const [materialTypeFilter, setMaterialTypeFilter] = useState<string | null>(null);
   const [excludeMaterialTypeFilter, setExcludeMaterialTypeFilter] = useState<string | null>(null);
   const [travelTimeFilter, setTravelTimeFilter] = useState<number | null>(null);
+  const [hideCancelledTrips, setHideCancelledTrips] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [allTrips, setAllTrips] = useState<NSApiResponse["trips"]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [enhancedTrainTypes, setEnhancedTrainTypes] = useState<Set<string>>(new Set());
@@ -33,6 +35,8 @@ export default function TripResults() {
       setMaterialTypeFilter(null);
       setExcludeMaterialTypeFilter(null);
       setTravelTimeFilter(null);
+      setHideCancelledTrips(false);
+      setShowFilters(false);
     };
 
     console.log("TripResults: Adding event listener for tripSearch");
@@ -300,6 +304,22 @@ export default function TripResults() {
       return tripMatchesSpecificMaterialFilter(trip, materialTypeFilter);
     };
 
+    // Function to detect if a trip is cancelled
+    const isTripCancelled = (trip: any): boolean => {
+      // Check if any leg in the trip is cancelled
+      return trip.legs?.some((leg: any) => {
+        // Check if the leg itself is cancelled
+        if (leg.cancelled === true) return true;
+        
+        // Check if any stop in the leg is cancelled
+        return leg.stops?.some((stop: any) => 
+          stop.cancelled === true || 
+          stop.status === 'CANCELLED' ||
+          stop.status === 'CANCELED'
+        );
+      }) || false;
+    };
+
     // Filter trips based on transfer, material type, and travel time filters
     let filteredTrips = currentTrips;
     
@@ -322,6 +342,11 @@ export default function TripResults() {
         const travelTime = calculateTravelTime(trip);
         return travelTime <= travelTimeFilter;
       });
+    }
+    
+    // Apply cancelled trip filter
+    if (hideCancelledTrips) {
+      filteredTrips = filteredTrips.filter(trip => !isTripCancelled(trip));
     }
 
     // Sort trips by arrival time (earliest first), then by total journey time (shortest first)
@@ -379,8 +404,8 @@ export default function TripResults() {
             Available Trips
           </h2>
           <div className="text-sm text-gray-600">
-            {(transferFilter !== null || materialTypeFilter !== null || travelTimeFilter !== null) 
-              ? `${filteredTrips.length} of ${currentTrips.length} trips${transferFilter !== null ? ` (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})` : ''}${materialTypeFilter ? ` (${materialTypeFilter})` : ''}${travelTimeFilter ? ` (≤${travelTimeFilter}min)` : ''}`
+            {(transferFilter !== null || materialTypeFilter !== null || travelTimeFilter !== null || hideCancelledTrips) 
+              ? `${filteredTrips.length} of ${currentTrips.length} trips${transferFilter !== null ? ` (${transferFilter} transfer${transferFilter !== 1 ? 's' : ''})` : ''}${materialTypeFilter ? ` (${materialTypeFilter})` : ''}${travelTimeFilter ? ` (≤${travelTimeFilter}min)` : ''}${hideCancelledTrips ? ' (cancelled hidden)' : ''}`
               : `${currentTrips.length} trips found`
             }
             {additionalCount > 0 && (
@@ -391,9 +416,25 @@ export default function TripResults() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="grid md:grid-cols-4 gap-6">
+        {/* Filters Toggle */}
+        <div className="mb-6">
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
+            variant="outline"
+            className="mb-4 flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+            {(transferFilter !== null || materialTypeFilter !== null || travelTimeFilter !== null || hideCancelledTrips) && (
+              <span className="ml-2 px-2 py-1 bg-ns-blue text-white text-xs rounded-full">
+                {[transferFilter !== null, materialTypeFilter !== null, travelTimeFilter !== null, hideCancelledTrips].filter(Boolean).length}
+              </span>
+            )}
+          </Button>
+          
+          {showFilters && (
+            <div className="p-4 bg-gray-50 rounded-lg border">
+              <div className="grid md:grid-cols-5 gap-6">
             {/* Transfer Filter */}
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -622,7 +663,39 @@ export default function TripResults() {
                 )}
               </div>
             </div>
+            
+            {/* Cancelled Trips Filter */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Show/Hide Cancelled
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setHideCancelledTrips(false)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    !hideCancelledTrips
+                      ? 'bg-ns-blue text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  Show All
+                </button>
+                <button
+                  onClick={() => setHideCancelledTrips(true)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    hideCancelledTrips
+                      ? 'bg-red-500 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  Hide Cancelled ({currentTrips.filter(trip => isTripCancelled(trip)).length})
+                </button>
+              </div>
+            </div>
           </div>
+            </div>
+          )}
         </div>
 
         {/* Debug information - Hidden by default */}
