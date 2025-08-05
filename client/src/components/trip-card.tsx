@@ -584,7 +584,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           transferParts.push(
             <div
               key={`transfer-${index}`}
-              className="text-xs text-black ml-8 -mt-1 mb-1"
+              className="text-sm text-black ml-8 -mt-1 mb-1"
             >
               ↻ transfer: {waitingTime}min{platformInfo}
             </div>,
