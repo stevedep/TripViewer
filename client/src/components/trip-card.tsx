@@ -791,9 +791,13 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       {/* Trip Header */}
       <CardContent className="p-4 border-b border-gray-100">
         <div className="mb-3 space-y-2">
-          {/* Modality info on first line */}
+          {/* Modality info on first line with transfer count */}
           <div className="flex justify-center">
             <div className="bg-gray-100 border border-gray-300 rounded px-3 py-1 text-sm font-medium text-gray-700 flex items-center gap-1">
+              {/* Transfer count first */}
+              <span className="flex items-center">
+                {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''} -
+              </span>
               {getTravelModalities().map((modality, index) => (
                 <span key={index} className="flex items-center">
                   {modality.type}:{modality.time}
@@ -978,7 +982,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                         </div>
                       </div>
                     )}
-                    <div className="font-medium mt-3">{headerInfo.transferCount}</div>
                   </>
                 );
               })()}
