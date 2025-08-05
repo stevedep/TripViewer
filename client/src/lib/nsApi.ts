@@ -23,6 +23,7 @@ export async function searchTrips(params: {
   fromStation: string;
   toStation: string;
   dateTime: string;
+  searchForArrival?: boolean;
   excludeBus?: boolean;
   excludeTram?: boolean;
   excludeMetro?: boolean;
@@ -60,6 +61,11 @@ export async function searchTrips(params: {
   apiUrl.searchParams.set("product", "OVCHIPKAART_ENKELE_REIS");
   apiUrl.searchParams.set("travelClass", "2");
   
+  // Add searchForArrival parameter if specified
+  if (searchParams.searchForArrival) {
+    apiUrl.searchParams.set("searchForArrival", "true");
+  }
+  
   // Set modality based on travel preferences
   if (searchParams.walkingOnly) {
     apiUrl.searchParams.set("firstMileModality", "WALK");
@@ -89,6 +95,7 @@ export async function searchTrips(params: {
 
   console.log("Making direct NS API request with travel options:", {
     fullUrl: apiUrl.toString(),
+    searchForArrival: searchParams.searchForArrival,
     excludeBus: searchParams.excludeBus,
     excludeTram: searchParams.excludeTram,
     excludeMetro: searchParams.excludeMetro,

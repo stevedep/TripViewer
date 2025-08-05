@@ -162,6 +162,7 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
       fromStation: "'s-Gravenhage, Vredespaleis",
       toStation: "Eindhoven Centraal",
       dateTime: new Date().toISOString().slice(0, 16),
+      searchForArrival: false,
       excludeBus: false,
       excludeTram: false,
       excludeMetro: false,
@@ -298,15 +299,39 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* DateTime Picker */}
+              {/* DateTime Picker with Departure/Arrival Toggle */}
               <FormField
                 control={form.control}
                 name="dateTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center text-sm font-medium text-gray-700">
-                      <Calendar className="text-ns-blue mr-1 w-4 h-4" />
-                      Departure Date & Time
+                    <FormLabel className="flex items-center justify-between text-sm font-medium text-gray-700">
+                      <div className="flex items-center">
+                        <Calendar className="text-ns-blue mr-1 w-4 h-4" />
+                        <span>
+                          {form.watch("searchForArrival") ? "Arrival" : "Departure"} Date & Time
+                        </span>
+                      </div>
+                      
+                      {/* Departure/Arrival Toggle */}
+                      <FormField
+                        control={form.control}
+                        name="searchForArrival"
+                        render={({ field: toggleField }) => (
+                          <div className="flex items-center space-x-2 text-xs">
+                            <span className={`${!toggleField.value ? 'font-semibold text-ns-blue' : 'text-gray-500'}`}>
+                              Depart
+                            </span>
+                            <Checkbox
+                              checked={toggleField.value}
+                              onCheckedChange={toggleField.onChange}
+                            />
+                            <span className={`${toggleField.value ? 'font-semibold text-ns-blue' : 'text-gray-500'}`}>
+                              Arrive
+                            </span>
+                          </div>
+                        )}
+                      />
                     </FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
