@@ -948,7 +948,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 const headerInfo = getDetailedHeader();
                 return (
                   <>
-                    <div className="font-medium">{headerInfo.transferCount}</div>
                     <div className="space-y-1">{headerInfo.transferDetails}</div>
                     {headerInfo.materialParts && headerInfo.materialParts.length > 0 && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
@@ -979,6 +978,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                         </div>
                       </div>
                     )}
+                    <div className="font-medium mt-3">{headerInfo.transferCount}</div>
                   </>
                 );
               })()}
