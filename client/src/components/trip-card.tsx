@@ -116,14 +116,10 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return "bg-ns-blue";
   };
 
-  // Get unique travel modalities for the trip with material details
+  // Get unique travel modalities for the trip with material details and time spent
   const getTravelModalities = () => {
-    const modalities: Array<{
-      type: string;
-      materials?: Array<{ name: string; crowdingLevel: string }>;
-    }> = [];
-    
-    const addedTypes = new Set<string>();
+    const modalityTimes: { [key: string]: number } = {};
+    const modalityMaterials: { [key: string]: Array<{ name: string; crowdingLevel: string }> } = {};
     
     trip.legs.forEach((leg) => {
       let modalityType = "";
@@ -145,62 +141,71 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         modalityType = "TR";
       }
       
-      if (!addedTypes.has(modalityType)) {
-        if (modalityType === "TR") {
-          // Collect train material types with crowding info
-          const trainMaterials: Array<{ name: string; crowdingLevel: string }> = [];
-          
-          trip.legs.forEach((trainLeg) => {
-            if (trainLeg.product.categoryCode && !["WALK", "BUS", "TRAM", "METRO"].includes(trainLeg.product.categoryCode)) {
-              const legKey = `${trainLeg.product.number}-${trainLeg.destination.stationCode}`;
-              const trainType = legTrainTypes[legKey] || trainLeg.product.categoryCode;
-              
-              // Use real crowding data from NS API
-              let crowdingLevel = "low"; // Default green
-              
-              // Use real crowding data from NS API
-              if (trainLeg.crowdForecast) {
-                console.log(`Crowding data for ${trainType} train ${trainLeg.product.number}:`, trainLeg.crowdForecast);
-                const crowdForecast = trainLeg.crowdForecast.toUpperCase();
-                
-                // Map NS crowding levels to text color classes
-                switch (crowdForecast) {
-                  case 'HIGH':
-                    crowdingLevel = "high"; // Red
-                    break;
-                  case 'MEDIUM':
-                    crowdingLevel = "medium"; // Black (as per user requirement)
-                    break;
-                  case 'LOW':
-                    crowdingLevel = "low"; // Green
-                    break;
-                  case 'UNKNOWN':
-                    crowdingLevel = "unknown"; // Grey
-                    break;
-                  default:
-                    // For other values, default to unknown (grey)
-                    crowdingLevel = "unknown";
-                }
-              } else {
-                console.log(`No crowding data for ${trainType} train ${trainLeg.product.number}`);
-              }
-              
-              // Avoid duplicates
-              if (!trainMaterials.some(m => m.name === trainType)) {
-                trainMaterials.push({ name: trainType, crowdingLevel });
-              }
-            }
-          });
-          
-          modalities.push({ type: modalityType, materials: trainMaterials });
-        } else {
-          modalities.push({ type: modalityType });
+      // Calculate leg duration in minutes
+      const legDuration = leg.plannedDurationInMinutes || 0;
+      modalityTimes[modalityType] = (modalityTimes[modalityType] || 0) + legDuration;
+      
+      // Collect train material types with crowding info
+      if (modalityType === "TR") {
+        if (!modalityMaterials[modalityType]) {
+          modalityMaterials[modalityType] = [];
         }
-        addedTypes.add(modalityType);
+        
+        const legKey = `${leg.product.number}-${leg.origin.stationCode}`;
+        const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+        
+        // Use real crowding data from NS API
+        let crowdingLevel = "low"; // Default green
+        
+        if (leg.crowdForecast) {
+          console.log(`Crowding data for ${trainType} train ${leg.product.number}:`, leg.crowdForecast);
+          const crowdForecast = leg.crowdForecast.toUpperCase();
+          
+          // Map NS crowding levels to text color classes
+          switch (crowdForecast) {
+            case 'HIGH':
+              crowdingLevel = "high"; // Red
+              break;
+            case 'MEDIUM':
+              crowdingLevel = "medium"; // Black (as per user requirement)
+              break;
+            case 'LOW':
+              crowdingLevel = "low"; // Green
+              break;
+            case 'UNKNOWN':
+              crowdingLevel = "unknown"; // Grey
+              break;
+            default:
+              // For other values, default to unknown (grey)
+              crowdingLevel = "unknown";
+          }
+        } else {
+          console.log(`No crowding data for ${trainType} train ${leg.product.number}`);
+        }
+        
+        // Avoid duplicates
+        if (!modalityMaterials[modalityType].some(m => m.name === trainType)) {
+          modalityMaterials[modalityType].push({ name: trainType, crowdingLevel });
+        }
       }
     });
     
-    return modalities;
+    // Build the result array with time information
+    const result: Array<{
+      type: string;
+      time: number;
+      materials?: Array<{ name: string; crowdingLevel: string }>;
+    }> = [];
+    
+    Object.keys(modalityTimes).forEach(modalityType => {
+      result.push({
+        type: modalityType,
+        time: modalityTimes[modalityType],
+        materials: modalityMaterials[modalityType]
+      });
+    });
+    
+    return result;
   };
 
   // State to store train types and seating data for each leg and API call details
@@ -827,7 +832,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 <div className="absolute top-[-16px] left-1/2 transform -translate-x-1/2 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-xs font-medium text-gray-700 z-10 flex items-center gap-1">
                   {getTravelModalities().map((modality, index) => (
                     <span key={index} className="flex items-center">
-                      {modality.type}
+                      {modality.type}:{modality.time}
                       {modality.materials && modality.materials.length > 0 && (
                         <span className="ml-0.5">
                           (
