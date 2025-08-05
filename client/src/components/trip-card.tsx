@@ -790,8 +790,46 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
       {/* Trip Header */}
       <CardContent className="p-4 border-b border-gray-100">
-        {/* Start/End times on first line */}
         <div className="mb-3 space-y-2">
+          {/* Modality info on first line */}
+          <div className="flex justify-center">
+            <div className="bg-gray-100 border border-gray-300 rounded px-3 py-1 text-sm font-medium text-gray-700 flex items-center gap-1">
+              {getTravelModalities().map((modality, index) => (
+                <span key={index} className="flex items-center">
+                  {modality.type}:{modality.time}
+                  {modality.materials && modality.materials.length > 0 && (
+                    <span className="ml-0.5">
+                      (
+                      {modality.materials.map((material, matIndex) => {
+                        const getCrowdingColor = (level: string) => {
+                          switch (level) {
+                            case 'low': return 'text-green-600';
+                            case 'medium': return 'text-black';
+                            case 'high': return 'text-red-600';
+                            case 'unknown': return 'text-gray-600';
+                            default: return 'text-gray-600';
+                          }
+                        };
+                        
+                        return (
+                          <span key={matIndex}>
+                            <span className={getCrowdingColor(material.crowdingLevel)}>
+                              {material.name}
+                            </span>
+                            {matIndex < modality.materials!.length - 1 && ', '}
+                          </span>
+                        );
+                      })}
+                      )
+                    </span>
+                  )}
+                  {index < getTravelModalities().length - 1 && ' '}
+                </span>
+              ))}
+            </div>
+          </div>
+          
+          {/* Start/End times on second line */}
           <div className="flex items-center justify-between">
             {/* Trip Overview */}
             <div className="flex items-center space-x-8 w-full">
@@ -828,41 +866,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 </div>
               </div>
               <div className="flex-1 relative">
-                {/* Travel Modalities Box */}
-                <div className="absolute top-[-16px] left-1/2 transform -translate-x-1/2 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-xs font-medium text-gray-700 z-10 flex items-center gap-1">
-                  {getTravelModalities().map((modality, index) => (
-                    <span key={index} className="flex items-center">
-                      {modality.type}:{modality.time}
-                      {modality.materials && modality.materials.length > 0 && (
-                        <span className="ml-0.5">
-                          (
-                          {modality.materials.map((material, matIndex) => {
-                            const getCrowdingColor = (level: string) => {
-                              switch (level) {
-                                case 'low': return 'text-green-600';
-                                case 'medium': return 'text-black';
-                                case 'high': return 'text-red-600';
-                                case 'unknown': return 'text-gray-600';
-                                default: return 'text-gray-600';
-                              }
-                            };
-                            
-                            return (
-                              <span key={matIndex}>
-                                <span className={getCrowdingColor(material.crowdingLevel)}>
-                                  {material.name}
-                                </span>
-                                {matIndex < modality.materials!.length - 1 && ', '}
-                              </span>
-                            );
-                          })}
-                          )
-                        </span>
-                      )}
-                      {index < getTravelModalities().length - 1 && ' '}
-                    </span>
-                  ))}
-                </div>
                 <div className="h-px bg-gray-300 relative">
                   <div
                     className={`absolute inset-0 h-full rounded ${getLineColor()}`}
