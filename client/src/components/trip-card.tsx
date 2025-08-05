@@ -243,7 +243,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
   // Handle train click to show carriage modal
   const handleTrainClick = (leg: any) => {
-    const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+    const legKey = `${leg.product.number}-${leg.origin.stationCode}`;
     const carriageData = legCarriageData[legKey];
     const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
     
@@ -591,7 +591,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     // Line 3: Material/train info with seating and crowding - show basic info even if detailed data is loading
     const materialParts: Array<{text: string, crowdForecast?: string}> = [];
     trip.legs.forEach((leg, index) => {
-      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+      const legKey = `${leg.product.number}-${leg.origin.stationCode}`;
       const trainType = legTrainTypes[legKey];
       const seatingData = legSeatingData[legKey];
 
@@ -629,15 +629,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
       const promises = trip.legs.map(async (leg) => {
         try {
-          // Extract train number, destination station code, and datetime from the leg
+          // Extract train number, boarding station code, and datetime from the leg
           const trainNumber = leg.product.number;
-          const destinationStationCode = leg.destination.stationCode;
+          const boardingStationCode = leg.origin.stationCode;
           const dateTime = leg.origin.plannedDateTime;
 
-          if (!trainNumber || !destinationStationCode) return null;
+          if (!trainNumber || !boardingStationCode) return null;
 
           // For static deployment, make direct call to NS Virtual Train API with CORS and seating features
-          const virtualTrainUrl = `https://gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein/${trainNumber}/${encodeURIComponent(destinationStationCode)}?dateTime=${encodeURIComponent(dateTime)}&features=zitplaats,druktev2,platformitems`;
+          const virtualTrainUrl = `https://gateway.apiportal.ns.nl/virtual-train-api/api/v1/trein/${trainNumber}/${encodeURIComponent(boardingStationCode)}?dateTime=${encodeURIComponent(dateTime)}&features=zitplaats,druktev2,platformitems`;
           const timestamp = new Date().toISOString();
 
           const response = await fetch(virtualTrainUrl, {
@@ -704,7 +704,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           }
 
           return {
-            legKey: `${trainNumber}-${destinationStationCode}`,
+            legKey: `${trainNumber}-${boardingStationCode}`,
             trainType: data.type || leg.product.categoryCode,
             firstClassSeats: firstClassSeats,
             secondClassSeats: secondClassSeats,
