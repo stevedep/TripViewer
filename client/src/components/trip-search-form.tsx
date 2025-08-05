@@ -160,7 +160,7 @@ export default function TripSearchForm({ onSearch }: TripSearchFormProps) {
     resolver: zodResolver(TripSearchSchema),
     defaultValues: {
       fromStation: "'s-Gravenhage, Vredespaleis",
-      toStation: "Eindhoven Centraal",
+      toStation: "Eindhoven, Centraal Station",
       dateTime: new Date().toISOString().slice(0, 16),
       searchForArrival: false,
       excludeBus: false,
