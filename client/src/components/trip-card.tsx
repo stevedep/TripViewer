@@ -510,17 +510,24 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                       }
                     }
                     return "";
-                  })()}
+                  })()} 
                 </span>
               </div>
               <div className={`font-bold ${modeDetails.color} truncate`}>
-                {platformInfo}{leg.destination.name}
-                {leg.direction && leg.direction !== leg.destination.name && (
+                {platformInfo}{leg.destination.name} {leg.destination.actualTrack && leg.destination.actualTrack.length > 0 && `(${leg.destination.actualTrack})`}
+              </div>
+              <div>{leg.name} {leg.direction && leg.direction !== leg.destination.name && (
                   <span className="text-xs text-gray-600 font-normal ml-1">
                     → {leg.direction}
-                  </span>
-                )}
-              </div>
+                  </span> 
+                )}  </div>
+                <div>
+                  {leg.stops.map((stop, stopIndex) => (
+                    <span key={stopIndex}>
+                      {stop.name}{stopIndex < leg.stops.length - 1 ? ' -> ' : ''}
+                    </span>
+                  ))}
+                </div>
             </div>
 
             {/* End time with delay info - smaller on mobile */}
