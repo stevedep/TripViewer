@@ -23,6 +23,19 @@ interface TripCardProps {
 export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [expandedStops, setExpandedStops] = useState<Set<number>>(new Set());
+
+  const toggleStopsExpansion = (legIndex: number) => {
+    setExpandedStops(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(legIndex)) {
+        newSet.delete(legIndex);
+      } else {
+        newSet.add(legIndex);
+      }
+      return newSet;
+    });
+  };
 
   // Calculate delay in minutes
   const calculateDelay = (
@@ -522,11 +535,32 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                   </span> 
                 )}  </div>
                 <div>
-                  {leg.stops.map((stop, stopIndex) => (
-                    <span key={stopIndex}>
-                      {stop.name}{stopIndex < leg.stops.length - 1 ? ' -> ' : ''}
-                    </span>
-                  ))}
+                  {leg.stops && leg.stops.length > 2 && (
+                    <div className="text-xs text-gray-600">
+                      {expandedStops.has(index) ? (
+                        <div>
+                          {leg.stops.slice(1, -1).map((stop, stopIndex) => (
+                            <span key={stopIndex}>
+                              {stop.name}{stopIndex < leg.stops.slice(1, -1).length - 1 ? ' -> ' : ''}
+                            </span>
+                          ))}
+                          <button 
+                            onClick={() => toggleStopsExpansion(index)}
+                            className="text-blue-600 hover:text-blue-800 ml-1 underline"
+                          >
+                            Hide stops
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => toggleStopsExpansion(index)}
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          Show {leg.stops.length - 2} stops
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
             </div>
 
