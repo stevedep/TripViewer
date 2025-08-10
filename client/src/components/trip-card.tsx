@@ -473,30 +473,31 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           key={`leg-${index}`}
           className={`text-sm ${modeDetails.bgColor} rounded overflow-hidden`}
         >
-          {/* Mobile-optimized layout */}
-          <div className="flex items-center gap-1 p-2">
-            {/* Start time with delay info - smaller on mobile */}
-            <div 
-              className="bg-white/80 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[42px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
-              onClick={() => {
-                const dateTime = leg.origin.actualDateTime || leg.origin.plannedDateTime;
-                console.log('Departure time clicked - raw dateTime:', dateTime);
-                handleTimeClick(
-                  leg.origin.name,
-                  lastLeg.destination.name,
-                  dateTime
-                );
-              }}
-            >
-              <div>{formatTime(departureTime)}</div>
-              {departureDelayInfo.text && (
-                <div className={`text-[10px] ${departureDelayInfo.className}`}>
-                  {departureDelayInfo.text}
-                </div>
-              )}
-            </div>
-
-            <span className="text-lg flex-shrink-0">{modeDetails.icon}</span>
+                     {/* Mobile-optimized layout */}
+           <div className="flex items-center gap-1 p-2">
+             {/* Start time with delay info - smaller on mobile */}
+             <div className="flex flex-col items-center gap-1">
+               <span className="text-lg flex-shrink-0">{modeDetails.icon}</span>
+               <div 
+                 className="bg-white/80 px-1.5 py-0.3 rounded text-xs font-mono text-gray-700 min-w-[10px] text-center flex-shrink-0 cursor-pointer hover:bg-blue-50 hover:text-blue-700"
+                 onClick={() => {
+                   const dateTime = leg.origin.actualDateTime || leg.origin.plannedDateTime;
+                   console.log('Departure time clicked - raw dateTime:', dateTime);
+                   handleTimeClick(
+                     leg.origin.name,
+                     lastLeg.destination.name,
+                     dateTime
+                   );
+                 }}
+               >
+                 <div>{formatTime(departureTime)}</div>
+                 {departureDelayInfo.text && (
+                   <div className={`text-[10px] ${departureDelayInfo.className}`}>
+                     {departureDelayInfo.text}
+                   </div>
+                 )}
+               </div>
+             </div>
 
             <div className="flex-1 min-w-0 px-1">
               <div className="flex items-center gap-1 flex-wrap">
@@ -867,9 +868,9 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   // No longer filtering at card level - parent component handles filtering
 
   return (
-    <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200">
+         <Card className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200 mx-1">
       {/* Trip Header */}
-      <CardContent className="p-4 border-b border-gray-100">
+             <CardContent className="p-2 border-b border-gray-100">
         <div className="mb-3 space-y-2">
           {/* Modality info on first line with transfer count */}
           <div className="flex justify-center">
@@ -1085,7 +1086,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
       {/* Trip Legs Details */}
       {showDetails && (
-        <CardContent className="p-6">
+                 <CardContent className="p-2">
           <LegDetails
             legs={trip.legs}
             originalDestination={lastLeg.destination.name}
