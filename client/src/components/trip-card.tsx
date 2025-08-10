@@ -110,6 +110,20 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     }
   };
 
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${minutes}min`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (remainingMinutes === 0) {
+        return `${hours}h`;
+      } else {
+        return `${hours}h ${remainingMinutes}min`;
+      }
+    }
+  };
+
   // Get line color based on train type
   const getLineColor = () => {
     if (trip.transfers > 0) return "bg-yellow-500";
@@ -474,7 +488,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             <div className="flex-1 min-w-0 px-1">
               <div className="flex items-center gap-1 flex-wrap">
                 <span className="text-xs text-gray-500 font-mono">
-                  {legDurationMinutes}min
+                  {formatDuration(legDurationMinutes)}
                 </span>
                 {isQuiet && (
                   <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">
