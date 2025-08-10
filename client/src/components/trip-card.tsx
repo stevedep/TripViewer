@@ -507,25 +507,50 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                   <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">
                     quiet
                   </span>
-                )}
-                <span className={`text-xs ${modeDetails.color} font-medium cursor-pointer hover:underline`}
-                      onClick={() => handleTrainClick(leg)}>
-                  {modalityType}
-                  {(() => {
-                    // Add direction indicator for trains
-                    if (modalityType === "train") {
-                      const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
-                      const carriageData = legCarriageData[legKey];
-                      if (carriageData?.direction === "LINKS") {
-                        return " (←)";
-                      } else if (carriageData?.direction === "RECHTS") {
-                        return " (→)";
-                      }
-                    }
-                    return "";
-                  })()} 
-                </span>
-              </div>
+                )} 
+                                 <span className={`text-xs ${modeDetails.color} font-medium cursor-pointer hover:underline`}
+                       onClick={() => handleTrainClick(leg)}>
+                   {modalityType}
+                   {(() => {
+                     // Add direction indicator for trains
+                     if (modalityType === "train") {
+                       const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+                       const carriageData = legCarriageData[legKey];
+                       if (carriageData?.direction === "LINKS") {
+                         return " (←)";
+                       } else if (carriageData?.direction === "RECHTS") {
+                         return " (→)";
+                       }
+                     }
+                     return "";
+                   })()} 
+                 </span>
+                 
+                 {/* Show train material type with crowding color coding */}
+                 {modalityType === "train" && (() => {
+                   const legKey = `${leg.product.number}-${leg.origin.stationCode}`;
+                   const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+                   
+                   // Get crowding color based on crowdForecast
+                   const getCrowdingColor = (crowdForecast?: string) => {
+                     if (!crowdForecast) return 'text-gray-600';
+                     const level = crowdForecast.toUpperCase();
+                     switch (level) {
+                       case 'LOW': return 'text-green-600';
+                       case 'MEDIUM': return 'text-black';
+                       case 'HIGH': return 'text-red-600';
+                       case 'UNKNOWN': return 'text-gray-600';
+                       default: return 'text-gray-600';
+                     }
+                   };
+                   
+                   return (
+                     <span className={`text-xs font-medium ${getCrowdingColor(leg.crowdForecast)}`}>
+                       {trainType}
+                     </span>
+                   );
+                 })()}
+               </div>
               <div className={`font-bold ${modeDetails.color} truncate`}>
                 {platformInfo}{leg.destination.name} {leg.destination.actualTrack && leg.destination.actualTrack.length > 0 && `(${leg.destination.actualTrack})`}
               </div>
