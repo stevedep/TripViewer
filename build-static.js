@@ -7,6 +7,12 @@ import { join } from 'path';
 console.log('Building static website...');
 
 try {
+  // Install dependencies if needed
+  console.log('Installing dependencies...');
+  execSync('npm install', { 
+    stdio: 'inherit'
+  });
+
   // Clean previous build
   if (existsSync('dist')) {
     rmSync('dist', { recursive: true, force: true });
@@ -14,7 +20,7 @@ try {
 
   // Build frontend with Vite
   console.log('Building frontend...');
-  execSync('vite build', { 
+  execSync('npm run build', { 
     stdio: 'inherit'
   });
 
