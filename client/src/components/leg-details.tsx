@@ -148,6 +148,158 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
     return diffMinutes > 0 ? `${diffMinutes} min stop` : "0 min stop";
   };
 
+  // Function to get perron numbers for left and right sides of each image
+  const getPerronNumbersForImage = (perronAllocation: any[], imageIndex: number) => {
+    if (!perronAllocation || perronAllocation.length === 0) {
+      return { leftPerron: null, rightPerron: null };
+    }
+
+    // Alphabet array for perron letter inference
+    const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+    // Get all perron letters from the current image with their positions
+    const currentImagePerrons = perronAllocation[imageIndex]?.perronVoorzieningen
+      ?.filter((voorziening: any) => voorziening.type === 'PERRONLETTER')
+      ?.map((voorziening: any) => ({
+        letter: voorziening.description,
+        position: voorziening.scaledPosition || 0
+      }))
+      ?.sort((a: any, b: any) => a.position - b.position) || [];
+
+    // If current image has perron letters, analyze their positions
+    if (currentImagePerrons.length > 0) {
+      const bakImage = perronAllocation[imageIndex]?.bakImage;
+      if (!bakImage?.breedte) {
+        // Fallback to simple logic if we don't have position data
+        return {
+          leftPerron: currentImagePerrons[0].letter,
+          rightPerron: currentImagePerrons[currentImagePerrons.length - 1].letter
+        };
+      }
+
+      // Calculate the start position of this carriage in the total train
+      let carriageStartPosition = 0;
+      for (let i = 0; i < imageIndex; i++) {
+        carriageStartPosition += perronAllocation[i]?.bakImage?.breedte || 0;
+      }
+
+      // Convert absolute positions to relative positions within this carriage
+      const perronsWithRelativePositions = currentImagePerrons.map((perron: any) => {
+        const positionInCarriage = perron.position - carriageStartPosition;
+        const percentagePosition = Math.min(Math.max((positionInCarriage / bakImage.breedte) * 100, 0), 100);
+        return {
+          ...perron,
+          percentagePosition
+        };
+      });
+
+      // If we have multiple perron letters, determine left and right based on positions
+      if (perronsWithRelativePositions.length > 1) {
+        const sortedPerrons = perronsWithRelativePositions.sort((a: any, b: any) => a.percentagePosition - b.percentagePosition);
+        return {
+          leftPerron: sortedPerrons[0].letter,
+          rightPerron: sortedPerrons[sortedPerrons.length - 1].letter
+        };
+      }
+
+      // If we have only one perron letter, infer adjacent perrons based on position
+      const singlePerron = perronsWithRelativePositions[0];
+      const percentagePosition = singlePerron.percentagePosition;
+
+      // If the perron is positioned beyond 10% from the left, the left side likely corresponds to the previous perron letter
+      if (percentagePosition > 10) {
+        // First, try to find previous perron letters in other images
+        for (let i = imageIndex - 1; i >= 0; i--) {
+          const previousImagePerrons = perronAllocation[i]?.perronVoorzieningen
+            ?.filter((voorziening: any) => voorziening.type === 'PERRONLETTER')
+            ?.map((voorziening: any) => voorziening.description)
+            ?.sort() || [];
+
+          if (previousImagePerrons.length > 0) {
+            return {
+              leftPerron: previousImagePerrons[previousImagePerrons.length - 1], // Use the last (rightmost) perron from previous image
+              rightPerron: singlePerron.letter
+            };
+          }
+        }
+
+        // If no previous perron letters found, infer using alphabet
+        const currentLetterIndex = alphabet.indexOf(singlePerron.letter);
+        if (currentLetterIndex > 0) {
+          return {
+            leftPerron: alphabet[currentLetterIndex - 1],
+            rightPerron: singlePerron.letter
+          };
+        }
+      }
+
+      // If the perron is positioned at 10% or less from the left, the right side likely corresponds to the next perron letter
+      if (percentagePosition <= 10) {
+        // First, try to find next perron letters in other images
+        for (let i = imageIndex + 1; i < perronAllocation.length; i++) {
+          const nextImagePerrons = perronAllocation[i]?.perronVoorzieningen
+            ?.filter((voorziening: any) => voorziening.type === 'PERRONLETTER')
+            ?.map((voorziening: any) => voorziening.description)
+            ?.sort() || [];
+
+          if (nextImagePerrons.length > 0) {
+            return {
+              leftPerron: singlePerron.letter,
+              rightPerron: nextImagePerrons[0] // Use the first (leftmost) perron from next image
+            };
+          }
+        }
+
+        // If no next perron letters found, infer using alphabet
+        const currentLetterIndex = alphabet.indexOf(singlePerron.letter);
+        if (currentLetterIndex < alphabet.length - 1) {
+          return {
+            leftPerron: singlePerron.letter,
+            rightPerron: alphabet[currentLetterIndex + 1]
+          };
+        }
+      }
+
+      // If we can't infer adjacent perrons, just return the single perron for both sides
+      return {
+        leftPerron: singlePerron.letter,
+        rightPerron: singlePerron.letter
+      };
+    }
+
+    // If no perron letters in current image, look at previous images
+    for (let i = imageIndex - 1; i >= 0; i--) {
+      const previousImagePerrons = perronAllocation[i]?.perronVoorzieningen
+        ?.filter((voorziening: any) => voorziening.type === 'PERRONLETTER')
+        ?.map((voorziening: any) => voorziening.description)
+        ?.sort() || [];
+
+      if (previousImagePerrons.length > 0) {
+        return {
+          leftPerron: previousImagePerrons[0],
+          rightPerron: previousImagePerrons[previousImagePerrons.length - 1]
+        };
+      }
+    }
+
+    // If no perron letters found in any previous images, look at next images
+    for (let i = imageIndex + 1; i < perronAllocation.length; i++) {
+      const nextImagePerrons = perronAllocation[i]?.perronVoorzieningen
+        ?.filter((voorziening: any) => voorziening.type === 'PERRONLETTER')
+        ?.map((voorziening: any) => voorziening.description)
+        ?.sort() || [];
+
+      if (nextImagePerrons.length > 0) {
+        return {
+          leftPerron: nextImagePerrons[0],
+          rightPerron: nextImagePerrons[nextImagePerrons.length - 1]
+        };
+      }
+    }
+
+    return { leftPerron: null, rightPerron: null };
+  };
+
   // Handle train click to show carriage modal
   const handleTrainClick = (leg: any) => {
     console.log('handleTrainClick called with leg:', leg);
@@ -558,6 +710,27 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                           </span>
                         )}
                       </div>
+                      
+                      {/* Perron Numbers Display */}
+                      {(() => {
+                        const perronNumbers = getPerronNumbersForImage(selectedCarriageData.perronAllocation || [], index);
+                        if (perronNumbers.leftPerron || perronNumbers.rightPerron) {
+                          return (
+                            <div className="text-center text-xs text-blue-600 mt-1 font-medium">
+                              {perronNumbers.leftPerron && perronNumbers.rightPerron ? (
+                                <span>
+                                  Perron {perronNumbers.leftPerron} (left) - Perron {perronNumbers.rightPerron} (right)
+                                </span>
+                              ) : perronNumbers.leftPerron ? (
+                                <span>Perron {perronNumbers.leftPerron}</span>
+                              ) : (
+                                <span>Perron {perronNumbers.rightPerron}</span>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                       {/* Display perron voorzieningen */}
                       {perronVoorzieningen.length > 0 && (
                         <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg shadow-sm">
