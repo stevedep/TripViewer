@@ -1302,112 +1302,119 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 {selectedCarriageData.bakkenImages.map((imageUrl, index) => {
                   const perronVoorzieningen = selectedCarriageData.perronAllocation?.[index]?.perronVoorzieningen || [];
                   return (
-                    <div key={index} className="relative">
-                      {/* Direction indicator box */}
-                      {selectedCarriageData.direction && (
-                        <>
-                          {selectedCarriageData.direction === "LINKS" && index === 0 && (
-                            <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
-                              ← Direction
-                            </div>
+                    <div key={index} className="carriage-container border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                      {/* Carriage Image Section */}
+                      <div className="relative">
+                        {/* Direction indicator box */}
+                        {selectedCarriageData.direction && (
+                          <>
+                            {selectedCarriageData.direction === "LINKS" && index === 0 && (
+                              <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                                ← Direction
+                              </div>
+                            )}
+                            {selectedCarriageData.direction === "RECHTS" && index === selectedCarriageData.bakkenImages.length - 1 && (
+                              <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                                Direction →
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <img
+                          src={imageUrl}
+                          alt={`Carriage ${index + 1}`}
+                          className="w-full h-auto object-contain rounded border shadow-sm"
+                          style={{ maxHeight: 'none' }}
+                        />
+                        <div className="text-center text-sm text-gray-600 mt-2">
+                          Carriage {index + 1}
+                          {perronVoorzieningen.length > 0 && (
+                            <span className="ml-2 text-xs text-green-600">
+                              ({perronVoorzieningen.length} platform facilities)
+                            </span>
                           )}
-                          {selectedCarriageData.direction === "RECHTS" && index === selectedCarriageData.bakkenImages.length - 1 && (
-                            <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
-                              Direction →
-                            </div>
-                          )}
-                        </>
-                      )}
-                      <img
-                        src={imageUrl}
-                        alt={`Carriage ${index + 1}`}
-                        className="w-full h-auto object-contain rounded border shadow-sm"
-                        style={{ maxHeight: 'none' }}
-                      />
-                      <div className="text-center text-sm text-gray-600 mt-2">
-                        Carriage {index + 1}
+                        </div>
+                      </div>
+                      
+                      {/* Perron Voorzieningen Section - Always rendered but conditionally visible */}
+                      <div className={`mt-3 transition-all duration-200 ${perronVoorzieningen.length > 0 ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
                         {perronVoorzieningen.length > 0 && (
-                          <span className="ml-2 text-xs text-green-600">
-                            ({perronVoorzieningen.length} platform facilities)
-                          </span>
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+                            <div className="text-sm font-semibold text-green-800 mb-2 flex items-center">
+                              <span className="mr-2">🚉</span>
+                              Platform Facilities ({perronVoorzieningen.length})
+                            </div>
+                            
+                            {/* Precise Plotting Bar */}
+                            <div className="mb-3">
+                              <div className="text-xs text-gray-600 mb-1">Platform Layout (proportional positioning):</div>
+                              <div className="relative bg-gray-200 h-8 rounded border">
+                                {/* Grid lines for reference */}
+                                <div className="absolute inset-0 flex">
+                                  {Array.from({ length: 10 }, (_, i) => (
+                                    <div key={i} className="flex-1 border-r border-gray-300 last:border-r-0"></div>
+                                  ))}
+                                </div>
+                                
+                                {/* Plot each voorziening at its precise position */}
+                                {perronVoorzieningen.map((voorziening: any, vIndex: number) => {
+                                  const bakImage = selectedCarriageData.perronAllocation?.[index]?.bakImage;
+                                  if (!bakImage?.breedte) return null;
+                                  
+                                  // Calculate position relative to this specific bak image
+                                  // The voorziening.scaledPosition is already calculated relative to the total train width
+                                  // We need to find where this carriage starts in the total train and calculate the relative position
+                                  const totalBakkenWidth = selectedCarriageData.bakkenImages.reduce((sum: number, _: string, i: number) => {
+                                    return sum + (selectedCarriageData.perronAllocation?.[i]?.bakImage?.breedte || 0);
+                                  }, 0);
+                                  
+                                  // Calculate the start position of this carriage in the total train
+                                  let carriageStartPosition = 0;
+                                  for (let i = 0; i < index; i++) {
+                                    carriageStartPosition += selectedCarriageData.perronAllocation?.[i]?.bakImage?.breedte || 0;
+                                  }
+                                  
+                                  // Calculate the position relative to this specific carriage
+                                  const positionInCarriage = voorziening.scaledPosition - carriageStartPosition;
+                                  const percentagePosition = Math.min(Math.max((positionInCarriage / bakImage.breedte) * 100, 0), 100);
+                                  
+                                  return (
+                                    <div
+                                      key={vIndex}
+                                      className="absolute top-0 h-full flex items-center"
+                                      style={{ left: `${percentagePosition}%` }}
+                                    >
+                                      <div className="bg-red-500 text-white text-xs px-1 py-0.5 rounded shadow-sm whitespace-nowrap z-10">
+                                        {voorziening.type === 'PERRONLETTER' ? `P${voorziening.description}` : 
+                                         voorziening.type === 'LIFT' ? '🛗' :
+                                         voorziening.type === 'TRAP' ? '🪜' :
+                                         voorziening.type === 'ROLTRAP' ? '🛗' :
+                                         voorziening.type.charAt(0)}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Left edge of image: 0% | Right edge of image: 100%
+                              </div>
+                            </div>
+                            
+                            {/* List of facilities */}
+                            <div className="flex flex-wrap gap-2">
+                              {perronVoorzieningen.map((voorziening: any, vIndex: number) => (
+                                <span key={vIndex} className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200 font-medium" title={`${voorziening.type}: ${voorziening.description || 'No description'}`}>
+                                  {voorziening.type === 'PERRONLETTER' ? `Platform ${voorziening.description}` : 
+                                   voorziening.type === 'LIFT' ? '🛗 Lift' :
+                                   voorziening.type === 'TRAP' ? '🪜 Stairs' :
+                                   voorziening.type === 'ROLTRAP' ? '🛗 Escalator' :
+                                   voorziening.type}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
-                      {perronVoorzieningen.length > 0 && (
-                        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg shadow-sm">
-                          <div className="text-sm font-semibold text-green-800 mb-2 flex items-center">
-                            <span className="mr-2">🚉</span>
-                            Platform Facilities ({perronVoorzieningen.length})
-                          </div>
-                          
-                          {/* Precise Plotting Bar */}
-                          <div className="mb-3">
-                            <div className="text-xs text-gray-600 mb-1">Platform Layout (proportional positioning):</div>
-                            <div className="relative bg-gray-200 h-8 rounded border">
-                              {/* Grid lines for reference */}
-                              <div className="absolute inset-0 flex">
-                                {Array.from({ length: 10 }, (_, i) => (
-                                  <div key={i} className="flex-1 border-r border-gray-300 last:border-r-0"></div>
-                                ))}
-                              </div>
-                              
-                              {/* Plot each voorziening at its precise position */}
-                              {perronVoorzieningen.map((voorziening: any, vIndex: number) => {
-                                const bakImage = selectedCarriageData.perronAllocation?.[index]?.bakImage;
-                                if (!bakImage?.breedte) return null;
-                                
-                                // Calculate position relative to this specific bak image
-                                // The voorziening.scaledPosition is already calculated relative to the total train width
-                                // We need to find where this carriage starts in the total train and calculate the relative position
-                                const totalBakkenWidth = selectedCarriageData.bakkenImages.reduce((sum: number, _: string, i: number) => {
-                                  return sum + (selectedCarriageData.perronAllocation?.[i]?.bakImage?.breedte || 0);
-                                }, 0);
-                                
-                                // Calculate the start position of this carriage in the total train
-                                let carriageStartPosition = 0;
-                                for (let i = 0; i < index; i++) {
-                                  carriageStartPosition += selectedCarriageData.perronAllocation?.[i]?.bakImage?.breedte || 0;
-                                }
-                                
-                                // Calculate the position relative to this specific carriage
-                                const positionInCarriage = voorziening.scaledPosition - carriageStartPosition;
-                                const percentagePosition = Math.min(Math.max((positionInCarriage / bakImage.breedte) * 100, 0), 100);
-                                
-                                return (
-                                  <div
-                                    key={vIndex}
-                                    className="absolute top-0 h-full flex items-center"
-                                    style={{ left: `${percentagePosition}%` }}
-                                  >
-                                    <div className="bg-red-500 text-white text-xs px-1 py-0.5 rounded shadow-sm whitespace-nowrap z-10">
-                                      {voorziening.type === 'PERRONLETTER' ? `P${voorziening.description}` : 
-                                       voorziening.type === 'LIFT' ? '🛗' :
-                                       voorziening.type === 'TRAP' ? '🪜' :
-                                       voorziening.type === 'ROLTRAP' ? '🛗' :
-                                       voorziening.type.charAt(0)}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              Left edge of image: 0% | Right edge of image: 100%
-                            </div>
-                          </div>
-                          
-                          {/* List of facilities */}
-                          <div className="flex flex-wrap gap-2">
-                            {perronVoorzieningen.map((voorziening: any, vIndex: number) => (
-                              <span key={vIndex} className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200 font-medium" title={`${voorziening.type}: ${voorziening.description || 'No description'}`}>
-                                {voorziening.type === 'PERRONLETTER' ? `Platform ${voorziening.description}` : 
-                                 voorziening.type === 'LIFT' ? '🛗 Lift' :
-                                 voorziening.type === 'TRAP' ? '🪜 Stairs' :
-                                 voorziening.type === 'ROLTRAP' ? '🛗 Escalator' :
-                                 voorziening.type}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
