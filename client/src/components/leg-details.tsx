@@ -8,12 +8,30 @@ interface LegDetailsProps {
   originalDestination?: string;
   legSeatingData?: { [key: string]: { first: number; second: number } };
   legTrainTypes?: { [key: string]: string };
-  legCarriageData?: { [key: string]: { carriageCount: number; bakkenImages: string[]; direction?: string } };
+  legCarriageData?: { [key: string]: { 
+    carriageCount: number; 
+    bakkenImages: string[]; 
+    direction?: string;
+    perronAllocation?: any[];
+  } };
 }
 
 export default function LegDetails({ legs, originalDestination, legSeatingData, legTrainTypes, legCarriageData }: LegDetailsProps) {
+  console.log('LegDetails props:', { 
+    legsCount: legs?.length, 
+    legSeatingDataKeys: Object.keys(legSeatingData || {}),
+    legTrainTypesKeys: Object.keys(legTrainTypes || {}),
+    legCarriageDataKeys: Object.keys(legCarriageData || {})
+  });
   const [expandedLegs, setExpandedLegs] = useState<Set<string>>(new Set());
   const [expandedTrainImages, setExpandedTrainImages] = useState<Set<string>>(new Set());
+  const [showCarriageModal, setShowCarriageModal] = useState(false);
+  const [selectedCarriageData, setSelectedCarriageData] = useState<{
+    bakkenImages: string[];
+    direction?: string;
+    trainType: string;
+    perronAllocation?: any[];
+  } | null>(null);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     fromStation: string;
@@ -130,6 +148,42 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
     return diffMinutes > 0 ? `${diffMinutes} min stop` : "0 min stop";
   };
 
+  // Handle train click to show carriage modal
+  const handleTrainClick = (leg: any) => {
+    console.log('handleTrainClick called with leg:', leg);
+    
+    const legKey = `${leg.product.number}-${leg.destination.stationCode}`;
+    console.log('Generated legKey:', legKey);
+    
+    const carriageData = legCarriageData?.[legKey];
+    console.log('Found carriageData:', carriageData);
+    
+    const trainType = legTrainTypes?.[legKey] || leg.product.categoryCode;
+    console.log('Train type:', trainType);
+    
+         if (carriageData && carriageData.bakkenImages.length > 0) {
+       console.log('Carriage data found, opening modal with:', {
+         bakkenImages: carriageData.bakkenImages,
+         direction: carriageData.direction,
+         trainType: trainType,
+         perronAllocation: carriageData.perronAllocation
+       });
+       console.log('Perron allocation details:', carriageData.perronAllocation);
+      
+      setSelectedCarriageData({
+        bakkenImages: carriageData.bakkenImages,
+        direction: carriageData.direction,
+        trainType: trainType,
+        perronAllocation: carriageData.perronAllocation
+      });
+      setShowCarriageModal(true);
+      console.log('Modal state set to true');
+    } else {
+      console.log('No carriage data found or no bakkenImages. carriageData:', carriageData);
+      console.log('legCarriageData keys:', Object.keys(legCarriageData || {}));
+    }
+  };
+
   return (
     <>
       <div>
@@ -168,7 +222,16 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                  leg.product.categoryCode === 'SPR' ? '94%' : 
                  leg.product.categoryCode === 'ICD' ? '87%' : '92%'} on time
               </div>
-              <div className="text-gray-700 font-medium">{leg.product.displayName}</div>
+                             <div 
+                 className="text-gray-700 font-medium cursor-pointer hover:text-ns-blue hover:underline"
+                 onClick={() => {
+                   console.log('Train name clicked for leg:', leg);
+                   handleTrainClick(leg);
+                 }}
+                 title="Click to view train layout"
+               >
+                {leg.product.displayName}
+              </div>
               <div className="text-gray-500 text-sm">→ {leg.direction}</div>
             </div>
             <div className="flex items-center space-x-2">
@@ -328,19 +391,48 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                       {/* Train Images - Stacked Vertically */}
                       {expandedTrainImages.has(legKey) && (
                         <div className="mt-2 space-y-1">
-                          {carriageData.bakkenImages.map((imageUrl, index) => (
-                            <div key={index} className="bg-white border border-blue-200 rounded p-2">
-                              <div className="text-xs text-blue-600 mb-1">Carriage {index + 1}</div>
-                              <img
-                                src={imageUrl}
-                                alt={`Carriage ${index + 1} layout`}
-                                className="w-full h-auto max-h-24 object-contain"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          ))}
+                          {carriageData.bakkenImages.map((imageUrl, index) => {
+                            // Get perron voorzieningen for this carriage
+                            const perronVoorzieningen = carriageData.perronAllocation?.[index]?.perronVoorzieningen || [];
+                            
+                            return (
+                              <div key={index} className="bg-white border border-blue-200 rounded p-2">
+                                <div className="text-xs text-blue-600 mb-1">
+                                  Carriage {index + 1}
+                                  {perronVoorzieningen.length > 0 && (
+                                    <span className="ml-2 text-xs text-green-600">
+                                      ({perronVoorzieningen.length} platform facilities)
+                                    </span>
+                                  )}
+                                </div>
+                                <img
+                                  src={imageUrl}
+                                  alt={`Carriage ${index + 1} layout`}
+                                  className="w-full h-auto max-h-24 object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                                {/* Display perron voorzieningen */}
+                                {perronVoorzieningen.length > 0 && (
+                                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                                    <div className="text-xs font-medium text-green-800 mb-1">Platform Facilities:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {perronVoorzieningen.map((voorziening: any, vIndex: number) => (
+                                        <span 
+                                          key={vIndex} 
+                                          className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded"
+                                          title={`${voorziening.type}: ${voorziening.description || 'No description'}`}
+                                        >
+                                          {voorziening.type === 'PERRONLETTER' ? `Platform ${voorziening.description}` : voorziening.type}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -405,6 +497,103 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
         })}
       </div>
       
+      {/* Carriage Modal */}
+      {(() => {
+        console.log('Modal render check:', { showCarriageModal, selectedCarriageData });
+        return showCarriageModal && selectedCarriageData;
+      })() && selectedCarriageData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
+          <div className="bg-white rounded-lg w-full h-full max-w-none max-h-none overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-800">
+                {selectedCarriageData.trainType} Train Carriages
+                {selectedCarriageData.direction && (
+                  <span className="ml-2 text-sm text-gray-600">
+                    Direction: {selectedCarriageData.direction === "LINKS" ? "← Left" : "→ Right"}
+                  </span>
+                )}
+              </h3>
+              <button
+                onClick={() => setShowCarriageModal(false)}
+                className="text-gray-600 hover:text-gray-800 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body - Full Width Carriage Images */}
+            <div className="flex-1 overflow-auto p-4">
+              <div className="space-y-4">
+                {selectedCarriageData.bakkenImages.map((imageUrl, index) => {
+                  // Get perron voorzieningen for this carriage
+                  const perronVoorzieningen = selectedCarriageData.perronAllocation?.[index]?.perronVoorzieningen || [];
+                  console.log(`Carriage ${index + 1} perron voorzieningen:`, perronVoorzieningen);
+                  
+                  return (
+                    <div key={index} className="relative">
+                      {/* Direction indicator box */}
+                      {selectedCarriageData.direction && (
+                        <>
+                          {selectedCarriageData.direction === "LINKS" && index === 0 && (
+                            <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                              ← Direction
+                            </div>
+                          )}
+                          {selectedCarriageData.direction === "RECHTS" && index === selectedCarriageData.bakkenImages.length - 1 && (
+                            <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                              Direction →
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <img
+                        src={imageUrl}
+                        alt={`Carriage ${index + 1}`}
+                        className="w-full h-auto object-contain rounded border shadow-sm"
+                        style={{ maxHeight: 'none' }}
+                      />
+                      <div className="text-center text-sm text-gray-600 mt-2">
+                        Carriage {index + 1}
+                        {perronVoorzieningen.length > 0 && (
+                          <span className="ml-2 text-xs text-green-600">
+                            ({perronVoorzieningen.length} platform facilities)
+                          </span>
+                        )}
+                      </div>
+                      {/* Display perron voorzieningen */}
+                      {perronVoorzieningen.length > 0 && (
+                        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+                          <div className="text-sm font-semibold text-green-800 mb-2 flex items-center">
+                            <span className="mr-2">🚉</span>
+                            Platform Facilities ({perronVoorzieningen.length})
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {perronVoorzieningen.map((voorziening: any, vIndex: number) => (
+                              <span 
+                                key={vIndex} 
+                                className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200 font-medium"
+                                title={`${voorziening.type}: ${voorziening.description || 'No description'}`}
+                              >
+                                {voorziening.type === 'PERRONLETTER' ? `Platform ${voorziening.description}` : 
+                                 voorziening.type === 'LIFT' ? '🛗 Lift' :
+                                 voorziening.type === 'TRAP' ? '🪜 Stairs' :
+                                 voorziening.type === 'ROLTRAP' ? '🛗 Escalator' :
+                                 voorziening.type}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Alternative Trips Modal */}
       <AlternativeTripsModal
         isOpen={modalState.isOpen}

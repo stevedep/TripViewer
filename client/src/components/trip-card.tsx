@@ -235,6 +235,94 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return result;
   };
 
+  // Utility function to allocate perronVoorzieningen to bakken based on proportional positioning
+  const allocatePerronVoorzieningen = (materieeldeel: any, perronVoorzieningen: any[]) => {
+    if (!materieeldeel?.bakken || !perronVoorzieningen || perronVoorzieningen.length === 0) {
+      return [];
+    }
+
+    const { bakken, breedte } = materieeldeel;
+    
+    // Calculate total width of all bakken images
+    const totalBakkenWidth = bakken.reduce((sum: number, bak: any) => {
+      return sum + (bak.afbeelding?.breedte || 0);
+    }, 0);
+
+    // Calculate the scale factor between actual train width and image width
+    const scaleFactor = breedte / totalBakkenWidth;
+
+    // Create allocation result
+    const allocation: Array<{
+      bakIndex: number;
+      bakImage: any;
+      perronVoorzieningen: any[];
+    }> = [];
+
+    // Initialize each bak with empty perronVoorzieningen array
+    bakken.forEach((bak: any, index: number) => {
+      allocation.push({
+        bakIndex: index,
+        bakImage: bak.afbeelding,
+        perronVoorzieningen: []
+      });
+    });
+
+    // Allocate each perronVoorziening to the appropriate bak
+    perronVoorzieningen.forEach((voorziening) => {
+      const voorzieningCenter = voorziening.paddingLeft + (voorziening.width / 2);
+      
+      // Convert perronVoorziening position to scaled position
+      const scaledPosition = voorzieningCenter / scaleFactor;
+      
+      // Find which bak this voorziening belongs to
+      let currentPosition = 0;
+      let allocatedBakIndex = -1;
+      
+      for (let i = 0; i < bakken.length; i++) {
+        const bakWidth = bakken[i].afbeelding?.breedte || 0;
+        const bakStart = currentPosition;
+        const bakEnd = currentPosition + bakWidth;
+        
+        if (scaledPosition >= bakStart && scaledPosition <= bakEnd) {
+          allocatedBakIndex = i;
+          break;
+        }
+        
+        currentPosition += bakWidth;
+      }
+      
+      // If not found in any specific bak, allocate to the closest one
+      if (allocatedBakIndex === -1) {
+        currentPosition = 0;
+        let minDistance = Infinity;
+        
+        for (let i = 0; i < bakken.length; i++) {
+          const bakWidth = bakken[i].afbeelding?.breedte || 0;
+          const bakCenter = currentPosition + (bakWidth / 2);
+          const distance = Math.abs(scaledPosition - bakCenter);
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            allocatedBakIndex = i;
+          }
+          
+          currentPosition += bakWidth;
+        }
+      }
+      
+      // Add the voorziening to the allocated bak
+      if (allocatedBakIndex >= 0 && allocatedBakIndex < allocation.length) {
+        allocation[allocatedBakIndex].perronVoorzieningen.push({
+          ...voorziening,
+          scaledPosition,
+          originalPosition: voorzieningCenter
+        });
+      }
+    });
+
+    return allocation;
+  };
+
   // State to store train types and seating data for each leg and API call details
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>(
     {},
@@ -243,7 +331,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     [key: string]: { first: number; second: number };
   }>({});
   const [legCarriageData, setLegCarriageData] = useState<{
-    [key: string]: { carriageCount: number; bakkenImages: string[]; direction?: string };
+    [key: string]: { 
+      carriageCount: number; 
+      bakkenImages: string[]; 
+      direction?: string;
+      perronAllocation?: any[];
+    };
   }>({});
   const [apiCallDetails, setApiCallDetails] = useState<
     Array<{
@@ -260,6 +353,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     bakkenImages: string[]; 
     direction?: string; 
     trainType: string;
+    perronAllocation?: any[];
   } | null>(null);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -283,7 +377,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       setSelectedCarriageData({
         bakkenImages: carriageData.bakkenImages,
         direction: carriageData.direction,
-        trainType: trainType
+        trainType: trainType,
+        perronAllocation: carriageData.perronAllocation
       });
       setShowCarriageModal(true);
     }
@@ -728,8 +823,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
           const response = await fetch(virtualTrainUrl, {
             headers: {
-              "Ocp-Apim-Subscription-Key":
-                import.meta.env.VITE_NS_API_KEY || "",
+              "Ocp-Apim-Subscription-Key": "ae99952bf4d24fb893ce33472cb6d605"
+                // import.meta.env.VITE_NS_API_KEY || "",
             },
           });
 
@@ -769,6 +864,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           let carriageCount = 0;
           let bakkenImages: string[] = [];
           let direction = data.rijrichting || null; // Extract direction (LINKS/RECHTS)
+          let perronAllocation: any[] = [];
 
           if (data.materieeldelen && data.materieeldelen.length > 0) {
             data.materieeldelen.forEach((deel: any) => {
@@ -787,6 +883,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                 secondClassSeats += deel.zitplaatsen.zitplaatsTweedeKlas || 0;
               }
             });
+
+            // Allocate perronVoorzieningen to bakken for the first materieeldeel
+            if (data.perronVoorzieningen && data.materieeldelen[0]) {
+              perronAllocation = allocatePerronVoorzieningen(
+                data.materieeldelen[0], 
+                data.perronVoorzieningen
+              );
+              console.log("Perron allocation result:", perronAllocation);
+            }
           }
 
           return {
@@ -797,6 +902,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             carriageCount: carriageCount,
             bakkenImages: bakkenImages,
             direction: direction,
+            perronAllocation: perronAllocation,
           };
         } catch (error) {
           const errorMessage =
@@ -821,7 +927,12 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         [key: string]: { first: number; second: number };
       } = {};
       const newCarriageData: {
-        [key: string]: { carriageCount: number; bakkenImages: string[]; direction?: string };
+        [key: string]: { 
+          carriageCount: number; 
+          bakkenImages: string[]; 
+          direction?: string;
+          perronAllocation?: any[];
+        };
       } = {};
 
       results.forEach((result) => {
@@ -835,6 +946,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             carriageCount: result.carriageCount || 0,
             bakkenImages: result.bakkenImages || [],
             direction: result.direction || undefined,
+            perronAllocation: result.perronAllocation || [],
           };
 
           // Emit custom event for the filter to listen to
@@ -1189,34 +1301,61 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             {/* Modal Body - Full Width Carriage Images */}
             <div className="flex-1 overflow-auto p-4">
               <div className="space-y-4">
-                {selectedCarriageData.bakkenImages.map((imageUrl, index) => (
-                  <div key={index} className="relative">
-                    {/* Direction indicator box */}
-                    {selectedCarriageData.direction && (
-                      <>
-                        {selectedCarriageData.direction === "LINKS" && index === 0 && (
-                          <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
-                            ← Direction
-                          </div>
+                {selectedCarriageData.bakkenImages.map((imageUrl, index) => {
+                  const perronVoorzieningen = selectedCarriageData.perronAllocation?.[index]?.perronVoorzieningen || [];
+                  return (
+                    <div key={index} className="relative">
+                      {/* Direction indicator box */}
+                      {selectedCarriageData.direction && (
+                        <>
+                          {selectedCarriageData.direction === "LINKS" && index === 0 && (
+                            <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                              ← Direction
+                            </div>
+                          )}
+                          {selectedCarriageData.direction === "RECHTS" && index === selectedCarriageData.bakkenImages.length - 1 && (
+                            <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
+                              Direction →
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <img
+                        src={imageUrl}
+                        alt={`Carriage ${index + 1}`}
+                        className="w-full h-auto object-contain rounded border shadow-sm"
+                        style={{ maxHeight: 'none' }}
+                      />
+                      <div className="text-center text-sm text-gray-600 mt-2">
+                        Carriage {index + 1}
+                        {perronVoorzieningen.length > 0 && (
+                          <span className="ml-2 text-xs text-green-600">
+                            ({perronVoorzieningen.length} platform facilities)
+                          </span>
                         )}
-                        {selectedCarriageData.direction === "RECHTS" && index === selectedCarriageData.bakkenImages.length - 1 && (
-                          <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded font-bold z-10">
-                            Direction →
+                      </div>
+                      {perronVoorzieningen.length > 0 && (
+                        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+                          <div className="text-sm font-semibold text-green-800 mb-2 flex items-center">
+                            <span className="mr-2">🚉</span>
+                            Platform Facilities ({perronVoorzieningen.length})
                           </div>
-                        )}
-                      </>
-                    )}
-                    <img
-                      src={imageUrl}
-                      alt={`Carriage ${index + 1}`}
-                      className="w-full h-auto object-contain rounded border shadow-sm"
-                      style={{ maxHeight: 'none' }}
-                    />
-                    <div className="text-center text-sm text-gray-600 mt-2">
-                      Carriage {index + 1}
+                          <div className="flex flex-wrap gap-2">
+                            {perronVoorzieningen.map((voorziening: any, vIndex: number) => (
+                              <span key={vIndex} className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200 font-medium" title={`${voorziening.type}: ${voorziening.description || 'No description'}`}>
+                                {voorziening.type === 'PERRONLETTER' ? `Platform ${voorziening.description}` : 
+                                 voorziening.type === 'LIFT' ? '🛗 Lift' :
+                                 voorziening.type === 'TRAP' ? '🪜 Stairs' :
+                                 voorziening.type === 'ROLTRAP' ? '🛗 Escalator' :
+                                 voorziening.type}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
