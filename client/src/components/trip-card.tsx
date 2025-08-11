@@ -269,10 +269,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
     // Allocate each perronVoorziening to the appropriate bak
     perronVoorzieningen.forEach((voorziening) => {
-      const voorzieningCenter = voorziening.paddingLeft + (voorziening.width / 2);
-      
-      // Convert perronVoorziening position to scaled position
-      const scaledPosition = voorzieningCenter / scaleFactor;
+      // Use paddingLeft (left edge) instead of center for positioning
+      const scaledPosition = voorziening.paddingLeft / scaleFactor;
       
       // Find which bak this voorziening belongs to
       let currentPosition = 0;
@@ -315,7 +313,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         allocation[allocatedBakIndex].perronVoorzieningen.push({
           ...voorziening,
           scaledPosition,
-          originalPosition: voorzieningCenter
+          originalPosition: voorziening.paddingLeft
         });
       }
     });
@@ -1358,15 +1356,27 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                                 if (!bakImage?.breedte) return null;
                                 
                                 // Calculate position relative to this specific bak image
-                                const voorzieningCenter = voorziening.paddingLeft + (voorziening.width / 2);
-                                const scaledPosition = voorzieningCenter / (selectedCarriageData.perronAllocation?.[index]?.bakImage?.breedte || 1);
-                                const percentagePosition = Math.min(Math.max(scaledPosition * 100, 0), 100);
+                                // The voorziening.scaledPosition is already calculated relative to the total train width
+                                // We need to find where this carriage starts in the total train and calculate the relative position
+                                const totalBakkenWidth = selectedCarriageData.bakkenImages.reduce((sum: number, _: string, i: number) => {
+                                  return sum + (selectedCarriageData.perronAllocation?.[i]?.bakImage?.breedte || 0);
+                                }, 0);
+                                
+                                // Calculate the start position of this carriage in the total train
+                                let carriageStartPosition = 0;
+                                for (let i = 0; i < index; i++) {
+                                  carriageStartPosition += selectedCarriageData.perronAllocation?.[i]?.bakImage?.breedte || 0;
+                                }
+                                
+                                // Calculate the position relative to this specific carriage
+                                const positionInCarriage = voorziening.scaledPosition - carriageStartPosition;
+                                const percentagePosition = Math.min(Math.max((positionInCarriage / bakImage.breedte) * 100, 0), 100);
                                 
                                 return (
                                   <div
                                     key={vIndex}
                                     className="absolute top-0 h-full flex items-center"
-                                    style={{ left: `${percentagePosition}%`, transform: 'translateX(-50%)' }}
+                                    style={{ left: `${percentagePosition}%` }}
                                   >
                                     <div className="bg-red-500 text-white text-xs px-1 py-0.5 rounded shadow-sm whitespace-nowrap z-10">
                                       {voorziening.type === 'PERRONLETTER' ? `P${voorziening.description}` : 
