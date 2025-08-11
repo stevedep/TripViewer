@@ -1340,6 +1340,51 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
                             <span className="mr-2">🚉</span>
                             Platform Facilities ({perronVoorzieningen.length})
                           </div>
+                          
+                          {/* Precise Plotting Bar */}
+                          <div className="mb-3">
+                            <div className="text-xs text-gray-600 mb-1">Platform Layout (proportional positioning):</div>
+                            <div className="relative bg-gray-200 h-8 rounded border">
+                              {/* Grid lines for reference */}
+                              <div className="absolute inset-0 flex">
+                                {Array.from({ length: 10 }, (_, i) => (
+                                  <div key={i} className="flex-1 border-r border-gray-300 last:border-r-0"></div>
+                                ))}
+                              </div>
+                              
+                              {/* Plot each voorziening at its precise position */}
+                              {perronVoorzieningen.map((voorziening: any, vIndex: number) => {
+                                const bakImage = selectedCarriageData.perronAllocation?.[index]?.bakImage;
+                                if (!bakImage?.breedte) return null;
+                                
+                                // Calculate position relative to this specific bak image
+                                const voorzieningCenter = voorziening.paddingLeft + (voorziening.width / 2);
+                                const scaledPosition = voorzieningCenter / (selectedCarriageData.perronAllocation?.[index]?.bakImage?.breedte || 1);
+                                const percentagePosition = Math.min(Math.max(scaledPosition * 100, 0), 100);
+                                
+                                return (
+                                  <div
+                                    key={vIndex}
+                                    className="absolute top-0 h-full flex items-center"
+                                    style={{ left: `${percentagePosition}%`, transform: 'translateX(-50%)' }}
+                                  >
+                                    <div className="bg-red-500 text-white text-xs px-1 py-0.5 rounded shadow-sm whitespace-nowrap z-10">
+                                      {voorziening.type === 'PERRONLETTER' ? `P${voorziening.description}` : 
+                                       voorziening.type === 'LIFT' ? '🛗' :
+                                       voorziening.type === 'TRAP' ? '🪜' :
+                                       voorziening.type === 'ROLTRAP' ? '🛗' :
+                                       voorziening.type.charAt(0)}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Left edge of image: 0% | Right edge of image: 100%
+                            </div>
+                          </div>
+                          
+                          {/* List of facilities */}
                           <div className="flex flex-wrap gap-2">
                             {perronVoorzieningen.map((voorziening: any, vIndex: number) => (
                               <span key={vIndex} className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200 font-medium" title={`${voorziening.type}: ${voorziening.description || 'No description'}`}>
