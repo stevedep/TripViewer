@@ -21,7 +21,6 @@ interface TripCardProps {
 }
 
 export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
-  const [showDetails, setShowDetails] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [expandedStops, setExpandedStops] = useState<Set<number>>(new Set());
 
@@ -321,7 +320,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     return allocation;
   };
 
-  // State to store train types and seating data for each leg and API call details
+  // State to store train types and seating data for each leg
   const [legTrainTypes, setLegTrainTypes] = useState<{ [key: string]: string }>(
     {},
   );
@@ -336,15 +335,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       perronAllocation?: any[];
     };
   }>({});
-  const [apiCallDetails, setApiCallDetails] = useState<
-    Array<{
-      url: string;
-      response: any;
-      error?: string;
-      timestamp: string;
-    }>
-  >([]);
-  const [showApiDetails, setShowApiDetails] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [showCarriageModal, setShowCarriageModal] = useState(false);
   const [selectedCarriageData, setSelectedCarriageData] = useState<{ 
@@ -370,6 +360,11 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     const legKey = `${leg.product.number}-${leg.origin.stationCode}`;
     const carriageData = legCarriageData[legKey];
     const trainType = legTrainTypes[legKey] || leg.product.categoryCode;
+    
+    console.log('handleTrainClick called with leg:', leg);
+    console.log('legKey:', legKey);
+    console.log('carriageData:', carriageData);
+    console.log('perronAllocation:', carriageData?.perronAllocation);
     
     if (carriageData && carriageData.bakkenImages.length > 0) {
       setSelectedCarriageData({
@@ -799,13 +794,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
   // Fetch train details for each leg to get the actual train type
   useEffect(() => {
     const fetchTrainDetails = async () => {
-      const apiCalls: Array<{
-        url: string;
-        response: any;
-        error?: string;
-        timestamp: string;
-      }> = [];
-
       const promises = trip.legs.map(async (leg) => {
         try {
           // Extract train number, boarding station code, and datetime from the leg
@@ -838,15 +826,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
             JSON.stringify(data, null, 2),
           );
 
-          // Store API call details
-          apiCalls.push({
-            url: virtualTrainUrl,
-            response: data,
-            error: response.ok
-              ? undefined
-              : `${response.status}: ${response.statusText}`,
-            timestamp,
-          });
+
 
           if (!response.ok) {
             console.warn(
@@ -884,11 +864,15 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
 
             // Allocate perronVoorzieningen to bakken for the first materieeldeel
             if (data.perronVoorzieningen && data.materieeldelen[0]) {
+              console.log("Found perronVoorzieningen:", data.perronVoorzieningen);
+              console.log("Found materieeldelen[0]:", data.materieeldelen[0]);
               perronAllocation = allocatePerronVoorzieningen(
                 data.materieeldelen[0], 
                 data.perronVoorzieningen
               );
               console.log("Perron allocation result:", perronAllocation);
+            } else {
+              console.log("No perronVoorzieningen or materieeldelen found");
             }
           }
 
@@ -906,14 +890,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           console.warn(`Error fetching train details for leg:`, error);
-
-          // Store error details
-          apiCalls.push({
-            url: `Error constructing URL for leg ${leg.product.number}`,
-            response: null,
-            error: errorMessage,
-            timestamp: new Date().toISOString(),
-          });
 
           return null;
         }
@@ -959,7 +935,6 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
       setLegTrainTypes(newTrainTypes);
       setLegSeatingData(newSeatingData);
       setLegCarriageData(newCarriageData);
-      setApiCallDetails(apiCalls);
 
       // Emit enhanced types to parent component for filtering
       const enhancedTypes = Object.values(newTrainTypes);
@@ -1180,99 +1155,7 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
           )}
         </div>
 
-        {/* Toggle Details Button - only show when expanded */}
-        {!isCollapsed && (
-          <div className="mt-4 flex justify-center">
-            <Button
-              variant="outline"
-              onClick={() => setShowDetails(!showDetails)}
-              className="text-ns-blue hover:bg-ns-light-blue"
-            >
-              {showDetails ? "Hide" : "Show"} Journey Details
-            </Button>
-          </div>
-        )}
       </CardContent>
-
-      {/* Trip Legs Details */}
-      {showDetails && (
-                 <CardContent className="p-2">
-          <LegDetails
-            legs={trip.legs}
-            originalDestination={lastLeg.destination.name}
-            legSeatingData={legSeatingData}
-            legTrainTypes={legTrainTypes}
-            legCarriageData={legCarriageData}
-          />
-
-          {/* API Call Details Section */}
-          <div className="mt-6 border-t pt-4">
-            <button
-              onClick={() => setShowApiDetails(!showApiDetails)}
-              className="text-sm text-gray-600 hover:text-gray-800 underline mb-2"
-            >
-              {showApiDetails
-                ? "Hide API Call Details"
-                : "Show API Call Details"}
-            </button>
-
-            {showApiDetails && apiCallDetails.length > 0 && (
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-800">
-                  Virtual Train API Calls
-                </h4>
-                {apiCallDetails.map((apiCall, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-50 p-3 rounded-lg text-sm"
-                  >
-                    <div className="mb-2">
-                      <span className="font-medium text-gray-700">
-                        Call #{index + 1}:
-                      </span>
-                      <span className="ml-2 text-xs text-gray-500">
-                        {apiCall.timestamp}
-                      </span>
-                    </div>
-
-                    <div className="mb-2">
-                      <span className="font-medium text-gray-700">URL:</span>
-                      <code className="ml-2 bg-white px-2 py-1 rounded text-xs">
-                        {apiCall.url}
-                      </code>
-                    </div>
-
-                    {apiCall.error && (
-                      <div className="mb-2">
-                        <span className="font-medium text-red-600">Error:</span>
-                        <span className="ml-2 text-red-600 text-xs">
-                          {apiCall.error}
-                        </span>
-                      </div>
-                    )}
-
-                    <div>
-                      <span className="font-medium text-gray-700">
-                        Response:
-                      </span>
-                      <pre className="bg-white p-2 rounded mt-1 text-xs overflow-auto max-h-32 border">
-                        {JSON.stringify(apiCall.response, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {showApiDetails && apiCallDetails.length === 0 && (
-              <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600">
-                No API calls made yet. Virtual train API calls will appear here
-                when the component loads.
-              </div>
-            )}
-          </div>
-        </CardContent>
-      )}
 
       {/* Carriage Modal */}
       {showCarriageModal && selectedCarriageData && (
@@ -1301,6 +1184,8 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
               <div className="space-y-4">
                 {selectedCarriageData.bakkenImages.map((imageUrl, index) => {
                   const perronVoorzieningen = selectedCarriageData.perronAllocation?.[index]?.perronVoorzieningen || [];
+                  console.log(`Rendering carriage ${index + 1}, perronVoorzieningen:`, perronVoorzieningen);
+                  console.log(`selectedCarriageData.perronAllocation:`, selectedCarriageData.perronAllocation);
                   return (
                     <div key={index} className="carriage-container border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
                       {/* Carriage Image Section */}

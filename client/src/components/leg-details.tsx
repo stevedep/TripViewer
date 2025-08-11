@@ -187,10 +187,7 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
   return (
     <>
       <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <Route className="text-ns-blue mr-2" />
-          Journey Details
-        </h3>
+
 
         {legs.map((leg, index) => {
           const transferTime = getTransferTime(index);
