@@ -33,7 +33,7 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
     perronAllocation?: any[];
   } | null>(null);
   const [firstClassDetection, setFirstClassDetection] = useState<{
-    [imageIndex: number]: 'left' | 'right' | 'null' | 'loading' | null;
+    [imageIndex: number]: string | null;
   }>({});
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -348,6 +348,37 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
     }
   };
 
+  // Function to determine which perrons have first class seating
+  const getFirstClassPerrons = () => {
+    if (!selectedCarriageData?.perronAllocation) return [];
+    
+    const firstClassPerrons = new Set<string>();
+    
+    selectedCarriageData.bakkenImages.forEach((_, imageIndex) => {
+      const detectionResult = firstClassDetection[imageIndex];
+      const perronNumbers = getPerronNumbersForImage(selectedCarriageData.perronAllocation || [], imageIndex);
+      
+      // Only process if we have both detection result and perron numbers
+      if (detectionResult && typeof detectionResult === 'string' && 
+          (perronNumbers.leftPerron || perronNumbers.rightPerron)) {
+        
+        // Extract the side from the detection result
+        const hasLeftFirstClass = detectionResult.includes('left side');
+        const hasRightFirstClass = detectionResult.includes('right side');
+        
+        // Add perron numbers based on which side has first class
+        if (hasLeftFirstClass && perronNumbers.leftPerron) {
+          firstClassPerrons.add(perronNumbers.leftPerron);
+        }
+        if (hasRightFirstClass && perronNumbers.rightPerron) {
+          firstClassPerrons.add(perronNumbers.rightPerron);
+        }
+      }
+    });
+    
+    return Array.from(firstClassPerrons).sort();
+  };
+
   // Detect first class seating using OpenAI API
   const detectFirstClass = async (imageUrl: string, imageIndex: number) => {
     try {
@@ -389,24 +420,24 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
       const data = await response.json();
       const result = data.choices[0]?.message?.content?.trim().toLowerCase();
+      const statusCode = response.status;
       
       // Validate the response
       if (result === 'left' || result === 'right' || result === 'null') {
+        const displayText = result === 'left' ? `First class is on the left side (${statusCode})` : 
+                           result === 'right' ? `First class is on the right side (${statusCode})` : 
+                           `No first class found (${statusCode})`;
         setFirstClassDetection(prev => ({
           ...prev,
-          [imageIndex]: result
+          [imageIndex]: displayText
         }));
       } else {
         console.warn('Unexpected OpenAI response:', result);
         setFirstClassDetection(prev => ({
           ...prev,
-          [imageIndex]: 'null'
+          [imageIndex]: `No first class found (${statusCode})`
         }));
       }
     } catch (error) {
@@ -758,6 +789,35 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
 
             {/* Modal Body - Full Width Carriage Images */}
             <div className="flex-1 overflow-auto p-4">
+              {/* Consolidated First Class Perron Message */}
+              {(() => {
+                const firstClassPerrons = getFirstClassPerrons();
+                const totalImages = selectedCarriageData.bakkenImages.length;
+                const completedDetections = Object.keys(firstClassDetection).length;
+                
+                // Only show message if all detections are complete and we have results
+                if (completedDetections === totalImages && firstClassPerrons.length > 0) {
+                  return (
+                    <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div className="text-sm font-semibold text-purple-800 flex items-center">
+                        <span className="mr-2">🎫</span>
+                        First class is on Perron {firstClassPerrons.join(', ')}
+                      </div>
+                    </div>
+                  );
+                } else if (completedDetections === totalImages && firstClassPerrons.length === 0) {
+                  return (
+                    <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="text-sm font-semibold text-gray-800 flex items-center">
+                        <span className="mr-2">🎫</span>
+                        No first class seating found on any perron
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
               <div className="space-y-4">
                 {selectedCarriageData.bakkenImages.map((imageUrl, index) => {
                   // Get perron voorzieningen for this carriage
@@ -826,22 +886,10 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                               🔍 Analyzing first class seating...
                             </div>
                           );
-                        } else if (detectionResult === 'left') {
+                        } else if (detectionResult && typeof detectionResult === 'string') {
                           return (
                             <div className="text-center text-xs text-purple-600 mt-1 font-medium">
-                              🎫 First class on left side
-                            </div>
-                          );
-                        } else if (detectionResult === 'right') {
-                          return (
-                            <div className="text-center text-xs text-purple-600 mt-1 font-medium">
-                              🎫 First class on right side
-                            </div>
-                          );
-                        } else if (detectionResult === 'null') {
-                          return (
-                            <div className="text-center text-xs text-gray-500 mt-1">
-                              No first class detected
+                              🎫 {detectionResult}
                             </div>
                           );
                         }
