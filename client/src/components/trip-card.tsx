@@ -510,6 +510,10 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
     fromDateTime: ""
   });
 
+  // Debug: Check environment variable on component mount
+  console.log('TripCard mounted - API Key available:', !!import.meta.env.VITE_OPENAI_API_KEY);
+  console.log('TripCard mounted - API Key length:', import.meta.env.VITE_OPENAI_API_KEY?.length);
+
   // Handle train click to show carriage modal
   const handleTrainClick = (leg: any) => {
     const legKey = `${leg.product.number}-${leg.origin.stationCode}`;
@@ -560,6 +564,10 @@ export default function TripCard({ trip, materialTypeFilter }: TripCardProps) {
         ...prev,
         [imageIndex]: 'loading'
       }));
+
+      // Debug: Check if API key is available
+      console.log('API Key available:', !!import.meta.env.VITE_OPENAI_API_KEY);
+      console.log('API Key length:', import.meta.env.VITE_OPENAI_API_KEY?.length);
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

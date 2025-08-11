@@ -47,6 +47,10 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
     fromDateTime: ""
   });
 
+  // Debug: Check environment variable on component mount
+  console.log('LegDetails mounted - API Key available:', !!import.meta.env.VITE_OPENAI_API_KEY);
+  console.log('LegDetails mounted - API Key length:', import.meta.env.VITE_OPENAI_API_KEY?.length);
+
   const toggleLegStops = (legIdx: string) => {
     const newExpanded = new Set(expandedLegs);
     if (newExpanded.has(legIdx)) {
@@ -351,6 +355,10 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
         ...prev,
         [imageIndex]: 'loading'
       }));
+
+      // Debug: Check if API key is available
+      console.log('API Key available:', !!import.meta.env.VITE_OPENAI_API_KEY);
+      console.log('API Key length:', import.meta.env.VITE_OPENAI_API_KEY?.length);
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
