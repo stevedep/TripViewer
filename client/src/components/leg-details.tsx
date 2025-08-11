@@ -803,6 +803,42 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                         <span className="mr-2">🎫</span>
                         First class is on Perron {firstClassPerrons.join(', ')}
                       </div>
+                      
+                      {/* Perron Labels Table */}
+                      {(() => {
+                        // Get all perron labels used in the images
+                        const allPerronLabels = new Set<string>();
+                        selectedCarriageData.bakkenImages.forEach((_, imageIndex) => {
+                          const perronNumbers = getPerronNumbersForImage(selectedCarriageData.perronAllocation || [], imageIndex);
+                          if (perronNumbers.leftPerron) allPerronLabels.add(perronNumbers.leftPerron);
+                          if (perronNumbers.rightPerron) allPerronLabels.add(perronNumbers.rightPerron);
+                        });
+                        
+                        const sortedPerronLabels = Array.from(allPerronLabels).sort();
+                        
+                        if (sortedPerronLabels.length > 0) {
+                          return (
+                            <div className="mt-3">
+                              <div className="text-xs text-purple-600 mb-2">Perron Labels:</div>
+                              <div className="flex flex-wrap gap-2">
+                                {sortedPerronLabels.map((label) => (
+                                  <div
+                                    key={label}
+                                    className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                                      firstClassPerrons.includes(label)
+                                        ? 'bg-purple-100 text-purple-800 border-purple-300'
+                                        : 'bg-gray-100 text-gray-600 border-gray-300'
+                                    }`}
+                                  >
+                                    {label}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   );
                 } else if (completedDetections === totalImages && firstClassPerrons.length === 0) {
@@ -812,6 +848,38 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                         <span className="mr-2">🎫</span>
                         No first class seating found on any perron
                       </div>
+                      
+                      {/* Perron Labels Table */}
+                      {(() => {
+                        // Get all perron labels used in the images
+                        const allPerronLabels = new Set<string>();
+                        selectedCarriageData.bakkenImages.forEach((_, imageIndex) => {
+                          const perronNumbers = getPerronNumbersForImage(selectedCarriageData.perronAllocation || [], imageIndex);
+                          if (perronNumbers.leftPerron) allPerronLabels.add(perronNumbers.leftPerron);
+                          if (perronNumbers.rightPerron) allPerronLabels.add(perronNumbers.rightPerron);
+                        });
+                        
+                        const sortedPerronLabels = Array.from(allPerronLabels).sort();
+                        
+                        if (sortedPerronLabels.length > 0) {
+                          return (
+                            <div className="mt-3">
+                              <div className="text-xs text-gray-600 mb-2">Perron Labels:</div>
+                              <div className="flex flex-wrap gap-2">
+                                {sortedPerronLabels.map((label) => (
+                                  <div
+                                    key={label}
+                                    className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-300"
+                                  >
+                                    {label}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   );
                 }
