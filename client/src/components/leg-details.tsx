@@ -32,6 +32,9 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
     trainType: string;
     perronAllocation?: any[];
   } | null>(null);
+  const [firstClassDetection, setFirstClassDetection] = useState<{
+    [imageIndex: number]: 'left' | 'right' | 'null' | 'loading' | null;
+  }>({});
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     fromStation: string;
@@ -330,9 +333,80 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
       });
       setShowCarriageModal(true);
       console.log('Modal state set to true');
+      
+      // Trigger first-class detection for all carriage images
+      carriageData.bakkenImages.forEach((imageUrl, index) => {
+        detectFirstClass(imageUrl, index);
+      });
     } else {
       console.log('No carriage data found or no bakkenImages. carriageData:', carriageData);
       console.log('legCarriageData keys:', Object.keys(legCarriageData || {}));
+    }
+  };
+
+  // Detect first class seating using OpenAI API
+  const detectFirstClass = async (imageUrl: string, imageIndex: number) => {
+    try {
+      setFirstClassDetection(prev => ({
+        ...prev,
+        [imageIndex]: 'loading'
+      }));
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'windows with a line above or below are 1st class (also a number printed 1 or 2), which door (left,right) has direct view on 1st class when looking to the center. respond with left, right only or null when no 1st class found'
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: imageUrl
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 10
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const result = data.choices[0]?.message?.content?.trim().toLowerCase();
+      
+      // Validate the response
+      if (result === 'left' || result === 'right' || result === 'null') {
+        setFirstClassDetection(prev => ({
+          ...prev,
+          [imageIndex]: result
+        }));
+      } else {
+        console.warn('Unexpected OpenAI response:', result);
+        setFirstClassDetection(prev => ({
+          ...prev,
+          [imageIndex]: 'null'
+        }));
+      }
+    } catch (error) {
+      console.error('Error detecting first class:', error);
+      setFirstClassDetection(prev => ({
+        ...prev,
+        [imageIndex]: 'null'
+      }));
     }
   };
 
@@ -664,7 +738,10 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                 )}
               </h3>
               <button
-                onClick={() => setShowCarriageModal(false)}
+                onClick={() => {
+                  setShowCarriageModal(false);
+                  setFirstClassDetection({}); // Reset first-class detection state
+                }}
                 className="text-gray-600 hover:text-gray-800 text-2xl font-bold"
               >
                 ×
@@ -726,6 +803,37 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                               ) : (
                                 <span>Perron {perronNumbers.rightPerron}</span>
                               )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      
+                      {/* First Class Detection Display */}
+                      {(() => {
+                        const detectionResult = firstClassDetection[index];
+                        if (detectionResult === 'loading') {
+                          return (
+                            <div className="text-center text-xs text-gray-500 mt-1">
+                              🔍 Analyzing first class seating...
+                            </div>
+                          );
+                        } else if (detectionResult === 'left') {
+                          return (
+                            <div className="text-center text-xs text-purple-600 mt-1 font-medium">
+                              🎫 First class on left side
+                            </div>
+                          );
+                        } else if (detectionResult === 'right') {
+                          return (
+                            <div className="text-center text-xs text-purple-600 mt-1 font-medium">
+                              🎫 First class on right side
+                            </div>
+                          );
+                        } else if (detectionResult === 'null') {
+                          return (
+                            <div className="text-center text-xs text-gray-500 mt-1">
+                              No first class detected
                             </div>
                           );
                         }
