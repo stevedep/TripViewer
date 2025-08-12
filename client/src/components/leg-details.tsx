@@ -806,33 +806,84 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                       
                       {/* Perron Labels Table */}
                       {(() => {
-                        // Get all perron labels used in the images
-                        const allPerronLabels = new Set<string>();
-                        selectedCarriageData.bakkenImages.forEach((_, imageIndex) => {
-                          const perronNumbers = getPerronNumbersForImage(selectedCarriageData.perronAllocation || [], imageIndex);
-                          if (perronNumbers.leftPerron) allPerronLabels.add(perronNumbers.leftPerron);
-                          if (perronNumbers.rightPerron) allPerronLabels.add(perronNumbers.rightPerron);
+                        // Collect all perron voorzieningen with their positions
+                        const facilitiesWithPositions: Array<{
+                          displayName: string;
+                          position: number;
+                          type: string;
+                          description?: string;
+                        }> = [];
+                        
+                        // Collect from perronAllocation with positions
+                        selectedCarriageData.perronAllocation?.forEach((allocation: any) => {
+                          allocation.perronVoorzieningen?.forEach((voorziening: any) => {
+                            const label = voorziening.description;
+                            const type = voorziening.type;
+                            const position = voorziening.paddingLeft || 0;
+                            
+                            if (type === 'PERRONLETTER' && label) {
+                              facilitiesWithPositions.push({
+                                displayName: `Platform ${label}`,
+                                position,
+                                type,
+                                description: label
+                              });
+                            } else {
+                              let displayName = type;
+                              switch (type) {
+                                case 'LIFT':
+                                  displayName = '🛗 Lift';
+                                  break;
+                                case 'TRAP':
+                                  displayName = '🪜 Stairs';
+                                  break;
+                                case 'ROLTRAP':
+                                  displayName = '🛗 Escalator';
+                                  break;
+                                default:
+                                  displayName = type;
+                                  break;
+                              }
+                              
+                              facilitiesWithPositions.push({
+                                displayName,
+                                position,
+                                type,
+                                description: label
+                              });
+                            }
+                          });
                         });
                         
-                        const sortedPerronLabels = Array.from(allPerronLabels).sort();
+                        // Sort facilities by their position
+                        const sortedFacilities = facilitiesWithPositions.sort((a, b) => a.position - b.position);
                         
-                        if (sortedPerronLabels.length > 0) {
+                        if (sortedFacilities.length > 0) {
                           return (
                             <div className="mt-3">
-                              <div className="text-xs text-purple-600 mb-2">Perron Labels:</div>
-                              <div className="flex flex-wrap gap-2">
-                                {sortedPerronLabels.map((label) => (
-                                  <div
-                                    key={label}
-                                    className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                                      firstClassPerrons.includes(label)
-                                        ? 'bg-purple-100 text-purple-800 border-purple-300'
-                                        : 'bg-gray-100 text-gray-600 border-gray-300'
-                                    }`}
-                                  >
-                                    {label}
-                                  </div>
-                                ))}
+                              <div className="text-xs font-medium text-gray-700 mb-2">All Perron Facilities:</div>
+                              <div className="grid grid-cols-6 gap-1">
+                                {sortedFacilities.map((facility) => {
+                                  // Check if this is a perron letter
+                                  const isPerronLetter = facility.type === 'PERRONLETTER';
+                                  const perronLetter = isPerronLetter ? facility.description : null;
+                                  const hasFirstClass = perronLetter ? firstClassPerrons.includes(perronLetter) : false;
+                                  
+                                  return (
+                                    <div
+                                      key={`${facility.displayName}-${facility.position}`}
+                                      className={`px-2 py-1 text-xs rounded border text-center ${
+                                        isPerronLetter && hasFirstClass
+                                          ? 'bg-purple-100 text-purple-800 border-purple-300 font-semibold'
+                                          : isPerronLetter
+                                          ? 'bg-blue-100 text-blue-800 border-blue-300 font-semibold'
+                                          : 'bg-gray-100 text-gray-600 border-gray-300'
+                                      }`}
+                                    >
+                                      {facility.displayName}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           );
@@ -851,29 +902,80 @@ export default function LegDetails({ legs, originalDestination, legSeatingData, 
                       
                       {/* Perron Labels Table */}
                       {(() => {
-                        // Get all perron labels used in the images
-                        const allPerronLabels = new Set<string>();
-                        selectedCarriageData.bakkenImages.forEach((_, imageIndex) => {
-                          const perronNumbers = getPerronNumbersForImage(selectedCarriageData.perronAllocation || [], imageIndex);
-                          if (perronNumbers.leftPerron) allPerronLabels.add(perronNumbers.leftPerron);
-                          if (perronNumbers.rightPerron) allPerronLabels.add(perronNumbers.rightPerron);
+                        // Collect all perron voorzieningen with their positions
+                        const facilitiesWithPositions: Array<{
+                          displayName: string;
+                          position: number;
+                          type: string;
+                          description?: string;
+                        }> = [];
+                        
+                        // Collect from perronAllocation with positions
+                        selectedCarriageData.perronAllocation?.forEach((allocation: any) => {
+                          allocation.perronVoorzieningen?.forEach((voorziening: any) => {
+                            const label = voorziening.description;
+                            const type = voorziening.type;
+                            const position = voorziening.paddingLeft || 0;
+                            
+                            if (type === 'PERRONLETTER' && label) {
+                              facilitiesWithPositions.push({
+                                displayName: `Platform ${label}`,
+                                position,
+                                type,
+                                description: label
+                              });
+                            } else {
+                              let displayName = type;
+                              switch (type) {
+                                case 'LIFT':
+                                  displayName = '🛗 Lift';
+                                  break;
+                                case 'TRAP':
+                                  displayName = '🪜 Stairs';
+                                  break;
+                                case 'ROLTRAP':
+                                  displayName = '🛗 Escalator';
+                                  break;
+                                default:
+                                  displayName = type;
+                                  break;
+                              }
+                              
+                              facilitiesWithPositions.push({
+                                displayName,
+                                position,
+                                type,
+                                description: label
+                              });
+                            }
+                          });
                         });
                         
-                        const sortedPerronLabels = Array.from(allPerronLabels).sort();
+                        // Sort facilities by their position
+                        const sortedFacilities = facilitiesWithPositions.sort((a, b) => a.position - b.position);
                         
-                        if (sortedPerronLabels.length > 0) {
+                        if (sortedFacilities.length > 0) {
                           return (
                             <div className="mt-3">
-                              <div className="text-xs text-gray-600 mb-2">Perron Labels:</div>
-                              <div className="flex flex-wrap gap-2">
-                                {sortedPerronLabels.map((label) => (
-                                  <div
-                                    key={label}
-                                    className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-300"
-                                  >
-                                    {label}
-                                  </div>
-                                ))}
+                              <div className="text-xs font-medium text-gray-700 mb-2">All Perron Facilities:</div>
+                              <div className="grid grid-cols-6 gap-1">
+                                {sortedFacilities.map((facility) => {
+                                  // Check if this is a perron letter
+                                  const isPerronLetter = facility.type === 'PERRONLETTER';
+                                  
+                                  return (
+                                    <div
+                                      key={`${facility.displayName}-${facility.position}`}
+                                      className={`px-2 py-1 text-xs rounded border text-center ${
+                                        isPerronLetter
+                                          ? 'bg-blue-100 text-blue-800 border-blue-300 font-semibold'
+                                          : 'bg-gray-100 text-gray-600 border-gray-300'
+                                      }`}
+                                    >
+                                      {facility.displayName}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           );
