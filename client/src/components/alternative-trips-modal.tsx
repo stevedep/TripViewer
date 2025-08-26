@@ -168,6 +168,18 @@ export default function AlternativeTripsModal({
     return `+${hours}:${minutes.toString().padStart(2, '0')}`;
   };
 
+  // Calculate time gap between two consecutive alternative trips (current -> next)
+  const calculateGapBetweenOptions = (currentDepartureTime: string, nextDepartureTime: string): string => {
+    const current = new Date(currentDepartureTime);
+    const next = new Date(nextDepartureTime);
+    const diffMinutes = Math.max(0, Math.round((next.getTime() - current.getTime()) / (1000 * 60)));
+
+    if (diffMinutes < 60) return `+${diffMinutes} min`;
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return `+${hours}:${minutes.toString().padStart(2, '0')}`;
+  };
+
   // Toggle trip expansion
   const toggleTripExpansion = (tripUid: string) => {
     const newExpanded = new Set(expandedTrips);
@@ -212,117 +224,129 @@ export default function AlternativeTripsModal({
 
           {data && data.trips && (
             <div className="space-y-4">
-              {data.trips.slice(0, 5).map((trip: Trip, index: number) => {
-                const firstLeg = trip.legs[0];
-                const lastLeg = trip.legs[trip.legs.length - 1];
-                
-                const isExpanded = expandedTrips.has(trip.uid);
-                
-                return (
-                  <Card key={trip.uid} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-3 sm:p-4">
-                      {/* Clickable header - Mobile-first layout */}
-                      <div 
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 cursor-pointer"
-                        onClick={() => toggleTripExpansion(trip.uid)}
-                      >
-                        
-                        {/* Times and journey line */}
-                        <div className="flex items-center space-x-3 sm:space-x-6 flex-1">
-                          {/* Departure */}
-                          <div className="text-center flex-shrink-0">
-                            <div className="text-base sm:text-lg font-bold text-gray-800">
-                              {formatTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime)}
+              {(() => {
+                const tripsToShow = data.trips.slice(0, 5);
+                return tripsToShow.map((trip: Trip, index: number) => {
+                  const firstLeg = trip.legs[0];
+                  const lastLeg = trip.legs[trip.legs.length - 1];
+                  
+                  const isExpanded = expandedTrips.has(trip.uid);
+                  
+                  return (
+                    <Card key={trip.uid} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-3 sm:p-4">
+                        {/* Clickable header - Mobile-first layout */}
+                        <div 
+                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 cursor-pointer"
+                          onClick={() => toggleTripExpansion(trip.uid)}
+                        >
+                          
+                          {/* Times and journey line */}
+                          <div className="flex items-center space-x-3 sm:space-x-6 flex-1">
+                            {/* Departure */}
+                            <div className="text-center flex-shrink-0">
+                              <div className="text-base sm:text-lg font-bold text-gray-800">
+                                {formatTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime)}
+                                {(() => {
+                                  const nextTrip = tripsToShow[index + 1];
+                                  if (!nextTrip) return null;
+                                  const nextFirstLeg = nextTrip.legs[0];
+                                  const currentDeparture = firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime;
+                                  const nextDeparture = nextFirstLeg.origin.actualDateTime || nextFirstLeg.origin.plannedDateTime;
+                                  const gapText = calculateGapBetweenOptions(currentDeparture, nextDeparture);
+                                  return <span className="ml-1 text-xs text-gray-600">({gapText})</span>;
+                                })()}
+                              </div>
+                              {/* Waiting time */}
+                              <div className="text-xs text-blue-600 font-medium">
+                                {calculateWaitTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime, fromDateTime)}
+                              </div>
+                              {(() => {
+                                const delay = calculateDelay(firstLeg.origin.plannedDateTime, firstLeg.origin.actualDateTime);
+                                const delayInfo = formatDelay(delay);
+                                return delayInfo.text ? (
+                                  <div className={`text-xs ${delayInfo.className}`}>
+                                    {delayInfo.text}
+                                  </div>
+                                ) : null;
+                              })()}
+                              <div className="text-xs text-gray-500 hidden sm:block">
+                                Platform {firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
+                              </div>
+                              <div className="text-xs text-gray-500 sm:hidden">
+                                P{firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
+                              </div>
                             </div>
-                            {/* Waiting time */}
-                            <div className="text-xs text-blue-600 font-medium">
-                              {calculateWaitTime(firstLeg.origin.actualDateTime || firstLeg.origin.plannedDateTime, fromDateTime)}
-                            </div>
-                            {(() => {
-                              const delay = calculateDelay(firstLeg.origin.plannedDateTime, firstLeg.origin.actualDateTime);
-                              const delayInfo = formatDelay(delay);
-                              return delayInfo.text ? (
-                                <div className={`text-xs ${delayInfo.className}`}>
-                                  {delayInfo.text}
-                                </div>
-                              ) : null;
-                            })()}
-                            <div className="text-xs text-gray-500 hidden sm:block">
-                              Platform {firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
-                            </div>
-                            <div className="text-xs text-gray-500 sm:hidden">
-                              P{firstLeg.origin.actualTrack || firstLeg.origin.plannedTrack || "?"}
-                            </div>
-                          </div>
 
-                          {/* Journey line */}
-                          <div className="flex-1 relative">
-                            <div className="h-px bg-gray-300 relative min-w-16 sm:min-w-24">
-                              <div className="absolute inset-0 h-full rounded bg-ns-blue"></div>
-                              <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-4 h-4 sm:w-5 sm:h-5" />
+                            {/* Journey line */}
+                            <div className="flex-1 relative">
+                              <div className="h-px bg-gray-300 relative min-w-16 sm:min-w-24">
+                                <div className="absolute inset-0 h-full rounded bg-ns-blue"></div>
+                                <Train className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-ns-blue bg-white px-1 w-4 h-4 sm:w-5 sm:h-5" />
+                              </div>
+                              <div className="text-xs text-gray-500 text-center mt-1">
+                                {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 text-center mt-1">
-                              {trip.transfers} transfer{trip.transfers !== 1 ? 's' : ''}
-                            </div>
-                          </div>
 
-                          {/* Arrival */}
-                          <div className="text-center flex-shrink-0">
-                            <div className="text-base sm:text-lg font-bold text-gray-800">
-                              {formatTime(lastLeg.destination.actualDateTime || lastLeg.destination.plannedDateTime)}
+                            {/* Arrival */}
+                            <div className="text-center flex-shrink-0">
+                              <div className="text-base sm:text-lg font-bold text-gray-800">
+                                {formatTime(lastLeg.destination.actualDateTime || lastLeg.destination.plannedDateTime)}
+                              </div>
+                              {(() => {
+                                const delay = calculateDelay(lastLeg.destination.plannedDateTime, lastLeg.destination.actualDateTime);
+                                const delayInfo = formatDelay(delay);
+                                return delayInfo.text ? (
+                                  <div className={`text-xs ${delayInfo.className}`}>
+                                    {delayInfo.text}
+                                  </div>
+                                ) : null;
+                              })()}
+                              <div className="text-xs text-gray-500 hidden sm:block">
+                                Platform {lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
+                              </div>
+                              <div className="text-xs text-gray-500 sm:hidden">
+                                P{lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
+                              </div>
                             </div>
-                            {(() => {
-                              const delay = calculateDelay(lastLeg.destination.plannedDateTime, lastLeg.destination.actualDateTime);
-                              const delayInfo = formatDelay(delay);
-                              return delayInfo.text ? (
-                                <div className={`text-xs ${delayInfo.className}`}>
-                                  {delayInfo.text}
-                                </div>
-                              ) : null;
-                            })()}
-                            <div className="text-xs text-gray-500 hidden sm:block">
-                              Platform {lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
-                            </div>
-                            <div className="text-xs text-gray-500 sm:hidden">
-                              P{lastLeg.destination.actualTrack || lastLeg.destination.plannedTrack || "?"}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Duration and expand button */}
-                        <div className="flex items-center justify-between sm:justify-end gap-3">
-                          <div className="text-center sm:text-right flex-shrink-0">
-                            <div className="text-base sm:text-lg font-bold text-gray-800">
-                              {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
-                            </div>
-                            <div className="text-xs text-gray-600">Total journey</div>
                           </div>
                           
-                          {/* Expand/Collapse Icon */}
-                          <div className="text-gray-400 flex-shrink-0">
-                            {isExpanded ? (
-                              <ChevronUp className="w-5 h-5" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5" />
-                            )}
+                          {/* Duration and expand button */}
+                          <div className="flex items-center justify-between sm:justify-end gap-3">
+                            <div className="text-center sm:text-right flex-shrink-0">
+                              <div className="text-base sm:text-lg font-bold text-gray-800">
+                                {Math.floor(trip.plannedDurationInMinutes / 60)}:{(trip.plannedDurationInMinutes % 60).toString().padStart(2, '0')}
+                              </div>
+                              <div className="text-xs text-gray-600">Total journey</div>
+                            </div>
+                            
+                            {/* Expand/Collapse Icon */}
+                            <div className="text-gray-400 flex-shrink-0">
+                              {isExpanded ? (
+                                <ChevronUp className="w-5 h-5" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5" />
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Expanded Details - Hidden by default */}
-                      {isExpanded && (
-                        <div className="mt-4 border-t border-gray-200 pt-4">
-                          <TripCompactHeader
-                            trip={trip}
-                            legSeatingData={legSeatingData}
-                            legTrainTypes={legTrainTypes}
-                          />
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                        
+                        {/* Expanded Details - Hidden by default */}
+                        {isExpanded && (
+                          <div className="mt-4 border-t border-gray-200 pt-4">
+                            <TripCompactHeader
+                              trip={trip}
+                              legSeatingData={legSeatingData}
+                              legTrainTypes={legTrainTypes}
+                            />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
